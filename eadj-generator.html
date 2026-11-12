@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E.Adj Generator — Estimated Benefits Adjustment Analysis</title>
+<style>
+/* PBGC Design System v1.1.0 DRAFT — tokens from ErChulo/pbgc-design-system (docs/DESIGN.md). DRAFT for COLA/Section 508 review, NOT approved. */
+:root{
+  --pbgc-navy:#002D72; --pbgc-blue:#005BAA; --pbgc-light-blue:#D6E8F5; --pbgc-gold:#FFB81C;
+  --pbgc-black:#000000; --pbgc-white:#FFFFFF; --pbgc-gray-100:#F5F5F5; --pbgc-gray-300:#CCCCCC;
+  --pbgc-gray-600:#666666; --pbgc-gray-700:#333333; --pbgc-red:#C00000; --pbgc-green:#2E7D32;
+  --font-sans:"Helvetica Neue",Arial,sans-serif; --font-serif:"Times New Roman",Times,serif;
+  --radius:4px; --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px; --space-6:32px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--pbgc-black);color:var(--pbgc-white);font-family:var(--font-sans);font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+a{color:var(--pbgc-light-blue)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--pbgc-gold);outline-offset:2px}
+.app{max-width:960px;margin:0 auto;padding:0 var(--space-4) var(--space-6)}
+header.app-header{background:var(--pbgc-navy);margin:0 calc(-1 * var(--space-4));padding:var(--space-4) var(--space-4) var(--space-3)}
+.header-inner{display:flex;align-items:center;gap:var(--space-4)}
+.header-logo{height:52px;width:auto;flex:0 0 auto}
+.header-title h1{margin:0;font-size:22px;line-height:1.2;font-weight:700}
+.header-title p{margin:2px 0 0;font-size:14px;color:var(--pbgc-light-blue)}
+nav.app-nav{display:flex;gap:var(--space-2);flex-wrap:wrap;padding:var(--space-3) 0;border-bottom:1px solid var(--pbgc-gray-600)}
+nav.app-nav button{background:transparent;border:1px solid var(--pbgc-gray-600);color:var(--pbgc-white);border-radius:var(--radius);padding:var(--space-2) var(--space-3);font-size:15px;cursor:pointer}
+nav.app-nav button[aria-current="page"]{background:var(--pbgc-blue);border-color:var(--pbgc-blue)}
+nav.app-nav button:hover{border-color:var(--pbgc-white)}
+.stepper{display:flex;gap:var(--space-2);flex-wrap:wrap;list-style:none;margin:var(--space-4) 0 0;padding:0}
+.stepper li{flex:1 1 120px;border:1px solid var(--pbgc-gray-600);border-radius:var(--radius);padding:var(--space-2) var(--space-3);font-size:14px;color:var(--pbgc-gray-300)}
+.stepper li[aria-current="step"]{border-color:var(--pbgc-gold);color:var(--pbgc-white);background:#1a1a1a}
+.stepper li.done{border-color:var(--pbgc-green);color:var(--pbgc-white)}
+.stepper .step-num{display:block;font-weight:700;color:var(--pbgc-gold);font-size:12px}
+.stepper li.done .step-num{color:var(--pbgc-green)}
+main{padding-top:var(--space-4)}
+section.page{display:none}
+section.page.active{display:block}
+h2{font-size:20px;margin:0 0 var(--space-3)}
+h3{font-size:17px;margin:var(--space-5) 0 var(--space-2)}
+p{margin:0 0 var(--space-3)}
+.lede{color:var(--pbgc-light-blue)}
+.card{background:#111;border:1px solid var(--pbgc-gray-600);border-radius:var(--radius);padding:var(--space-4);margin-bottom:var(--space-4)}
+.card h3{margin-top:0}
+.field{margin-bottom:var(--space-3)}
+.field label{display:block;font-weight:700;margin-bottom:var(--space-1);font-size:15px}
+.field .hint{font-weight:400;color:var(--pbgc-gray-300);font-size:14px;display:block;margin-top:2px}
+.field input[type="text"],.field input[type="date"],.field input[type="number"],.field select,.field textarea{width:100%;background:var(--pbgc-white);color:var(--pbgc-black);border:2px solid var(--pbgc-gray-300);border-radius:var(--radius);padding:10px;font-size:16px;font-family:inherit}
+.field textarea{min-height:90px;resize:vertical}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}
+@media (max-width:640px){.field-row{grid-template-columns:1fr}.header-logo{height:44px}.header-title h1{font-size:19px}}
+.btn{display:inline-block;background:var(--pbgc-blue);color:var(--pbgc-white);border:2px solid var(--pbgc-blue);border-radius:var(--radius);padding:10px 18px;font-size:16px;cursor:pointer;text-decoration:none;font-family:inherit}
+.btn:hover{background:var(--pbgc-navy);border-color:var(--pbgc-white)}
+.btn.secondary{background:transparent;border-color:var(--pbgc-white)}
+.btn.secondary:hover{background:#1a1a1a}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-row{display:flex;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-4)}
+.btn-row .spacer{flex:1}
+.notice{border:1px solid var(--pbgc-gold);border-left:6px solid var(--pbgc-gold);border-radius:var(--radius);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4);background:#1a1a1a}
+.notice.error{border-color:var(--pbgc-red);border-left-color:var(--pbgc-red)}
+.notice.ok{border-color:var(--pbgc-green);border-left-color:var(--pbgc-green)}
+.notice p{margin:0 0 var(--space-2)}
+.notice p:last-child{margin-bottom:0}
+ul.tight{margin:0 0 var(--space-3);padding-left:20px}
+ul.tight li{margin-bottom:4px}
+ol.tight{margin:0 0 var(--space-3);padding-left:20px}
+ol.tight li{margin-bottom:4px}
+table.data{border-collapse:collapse;width:100%;margin-bottom:var(--space-3);font-size:14px}
+table.data th,table.data td{border:1px solid var(--pbgc-gray-600);padding:6px 8px;text-align:left;vertical-align:top}
+table.data th{background:var(--pbgc-navy);color:var(--pbgc-white)}
+table.data td{background:#111}
+.review-sec{border:1px solid var(--pbgc-gray-600);border-radius:var(--radius);margin-bottom:var(--space-3)}
+.review-sec>button{width:100%;text-align:left;background:#1a1a1a;color:var(--pbgc-white);border:0;border-radius:var(--radius);padding:var(--space-3) var(--space-4);font-size:16px;cursor:pointer;display:flex;justify-content:space-between;gap:var(--space-3)}
+.review-sec>button .badge{flex:0 0 auto;font-size:13px;border:1px solid var(--pbgc-gray-300);border-radius:var(--radius);padding:1px 8px}
+.review-sec>button .badge.approved{border-color:var(--pbgc-green);color:#9be29b}
+.review-sec .body{display:none;padding:var(--space-4);border-top:1px solid var(--pbgc-gray-600)}
+.review-sec.open .body{display:block}
+.review-sec .body dl{margin:0 0 var(--space-3)}
+.review-sec .body dt{font-weight:700;font-size:14px;color:var(--pbgc-gray-300)}
+.review-sec .body dd{margin:0 0 var(--space-2);font-size:15px;white-space:pre-wrap}
+.approve-row{display:flex;align-items:center;gap:var(--space-2);margin-top:var(--space-3);padding-top:var(--space-3);border-top:1px solid var(--pbgc-gray-600)}
+.approve-row input{width:22px;height:22px}
+.approve-row label{font-weight:700}
+.kbd-note{font-size:14px;color:var(--pbgc-gray-300)}
+pre.log{background:#111;border:1px solid var(--pbgc-gray-600);border-radius:var(--radius);padding:var(--space-3);white-space:pre-wrap;font-size:13px;max-height:300px;overflow:auto}
+footer.app-footer{border-top:1px solid var(--pbgc-gray-600);margin-top:var(--space-6);padding-top:var(--space-3);font-size:13px;color:var(--pbgc-gray-300)}
+footer.app-footer p{margin:0 0 4px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.skip-link{position:absolute;left:-9999px;top:0;background:var(--pbgc-gold);color:var(--pbgc-black);padding:8px 12px;z-index:10}
+.skip-link:focus{left:8px;top:8px}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<div class="app">
+<header class="app-header">
+  <div class="header-inner">
+    <img class="header-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAu8AAAD7CAYAAADaW3r1AAAACXBIWXMAABYlAAAWJQFJUiTwAAAgAElEQVR42u3dMXbjxqLm8a/vucHNSGeTCc4mE98KBK9A9AoEr6DpFTR6BWavwOwVXHY2maEVXGoFprLJHpVNxglQeEKjq4AqoECC5P93Do9tWQKBQgH4qlAofDgejwIAAAAwff+gCAAAAADCOwAAAADCOwAAAEB4BwAAAEB4BwAAAEB4BwAAAAjvAAAAAAjvAAAAAAjvAAAAAOEdAAAAAOEdAAAAAOEdAAAAILwDAAAAILwDAAAAILwDAAAAhHcAAAAAhHcAAAAAhHcAAACA8A4AAACA8A4AAAAQ3gEAAAAQ3gEAAAAQ3gEAAADCOwAAAADCOwAAAADCOwAAAEB4BwAAAEB4BwAAAEB4BwAAAAjvAAAAAAjvAAAAAAjvAAAAAOEdAAAAAOEdAAAAAOEdAAAAILwDAAAAILwDAAAAhHcAAAAAhHcAAAAAhHcAAACA8A4AAACA8A4AAACA8A4AAAAQ3gEAAAAQ3gEAAAAQ3gEAAIAr8U+KACNJJSXmM5e0qP2/B8ffvEna1f67MP/cSdo3/h8AAMDN+XA8HikFxAjqqQnoC0l3I37XiwnxOxPuCfQAAIDwDrRIJC1NYH8887q8mhC/NR8AAADCO27e3AT2laT7ia7jmwnwa9EjDwAACO+4YYmkvy9kXX8VvfAAAIDwjhu303R73et+knRgdwEAgGvDVJEIcQm92a8EdwAAQHgHLiO8M1wGAAAQ3gGVw2ZeCe8AAACEd1yGKYfjN72/2AkAAIDwjpsXOxy/3UjDAgAAgPCOk9tGDNyvkjaEdwAAAMI7xg3wsZZTRFyvgl0DAAAI77hVycghuYi4rG+yTxG5UPl2WAAAAMI7rja0FyrfqGoLvjF63t/Mcg6SniMsz7VOa0l7STkhHgAAEN5xTeYqx6D/LenB/Gxp+b2Dyp7uWGE7RmOgcGzPg6SZpE8mxK/YzQAAgPCOS5eZcPvU+PkyICz3De9Dl/Vi1l0d6z6T9IfK+eoX7HIAAEB4x6VJTHj+04TbpkeNM3SmHtiHvvxp4/i5q+FxL+k/KofUMJQGAAAQ3nERliY4P3j8XtNeZY93H7aHS4tIDYG6tOPvPpq/pRceAAAQ3jFpa0n/lr233Se8S+29758lfXB8bMvLWn7/F7nnln81DRDbOvtsW9ULn1ElAAAA4R1TMzdh92PA36Q9wvsn8/+HDkvJJP3VEsS3gQ0Olz8V94VRAAAAhHcMslA53OU+8O9mjjDcNVb9UeWwlKTn+m5MqG6zDWxwtHky28Q4eAAAQHjHWaUmSM96/n2foTMyDYXQ2V2quwNPHb/3Jvt494Wku57beS/GwQMAAMI7zihT+9AT3/BvU3j87Uz+48oXJrj73B3YtmzvEAR4AABAeMfZgvufEZZz5wizW7kfJm3yWY+1/HvNi8CGRogZAR4AABDecYnBvdJ36EzFZ2rJkPnjbb+bKHxMPwEeAAAQ3nFWaeTg3hbeiwFhu294t80V37aOBHgAAEB4xyQtNPwNqDb3ss8c4/tdW8t6rho/28vvbatFYANjaICPMe0lAAAA4R3fSTRsVpkuqeVnB5U94W2aL1PKzHr+YQnGfXvo5+p+W2xfd2Z9CfAAAIDwjijmJtTORvyOvkNnito6blQO6anWszkffFd4f1HZQ++7brHcq3ygFgAAgPCOwdaK97CmS+r4eVfgrnrXC9nnb6/mg0/N77x1LCukYRHTk34c6gMAAEB4R5CVul9qFMPMEeD3ap9NZq/ut7vOVM5Hv1J7T37Mt6r28ccJvwsAAIDwfmUWkvITfl/olJHVm1B9h/O0hePm2Pn6Os1OWAYbMf4dAAAQ3tEzSJ4quL7JPt68LbzPeqzfLPA7CklfT1jmd6bcAQAACO/wlmv8ce6VZ5W9/K6HNnfym+ZxiMLx84PKGWx+kd/LoGJ41GnG2QMAABDer8BC0qcTfM+bpN9VDmXZd/zuduT16Fp+Ydbzy4n2wUYMnwEAAIR3eAbHsb2YMOw7RWIx4rr4Lvug8qHXX9U+a00MMzF9JAAAILyjw0rjD5f5ZoL7LuBvtiMG5m2P3081/lCeJzH7DAAAILzDYa7xZ5f5qnI898Hx/xP1n/M9ZnhPVI51d9mpHF409jj4nGoJAAAI73AFxTFnl/naEYhXJhS7Amsxwjo9OxoSS5Vvay30/obWpoNpaIwZ4B86ygwAAGCwD8fjkVK4LImkv88U3Ocqx9k/1n72kyVUzyX9d+T1+l32seWFCc5SOVxnJfezANUbXscabvTa0oAAAAAYjJ73y5OfKbgvTPB9bPzcNlXiQeV4+Zi2jjD+UPvvmcpeeFd4H7sH/k70vgMAAMI7jETlw5HnCu62HmvXPOdFxHV7kX2KStd3P6kc1jNvCfBjPVSbU00BAADhHWMGwxeVw03agrtrjP2j4+cxH1p1NQTSlr+5N3/XFuDHQO87AAAYDWPeL8cY48ilsgd6IXvPdldwr/zqCOs7xRlf/l+yT1d58Fi3ap5628OumcphNmM0hhZUWQAAEBs975djNdJys4HBXXIPX4nR+/7qCO6p57q19cBvFH9sfvWdKVUWAAAQ3m9XNsIyv8n9IKhvcB87vBeB3+kK09uWcn27kP0FAAAI77gAS5VjqWN6awmYIcFd5ndtw0R2Gv52022E8C6Vs9LYppo8jBS0n2Tv7QcAACC8X7kxwuVK9nHga/Ubp54Fhu8h4T3p2Zj56Aj9W40zfCaj6gIAAML7bZnLPaNLX8+yz4WemoDbR+r4eTFgPV2BejlgmRvZX6Q0xjMFhHcAAEB4vzHLEZaZOxoJmwHLvHeE4q36jynfjlAmM8d27iV9iVzOrjIBAAAgvBPevTzL3huea/i4+tgPrvq8VbWPB8e65or/8OqSKgwAAAjvt2GMITO55WcL9R8u4xNUix7LepF9TH6sMOx6eHUdubwzqjEAAIiFlzRNW6a4LxF6ln1seqHhvdmVnyyhu/6CqTeVs9DsGr83N42IhcqhLb87gvRG5UwuMXy2NGYSSX9H3o8/ORoiAAAAQf5JEUxaGnl5G8d3PET8jqXlew4q38K6l/2FS02uN75Wy49lZRoI9WC9l/Q1YgPBVSYAAADBGDYzbTGD6psjQOYnWuetZ3CXfuyVrzc0ZhHXdSb7sJbYQTulKgMAAML7dVtEDqq2QJoobq+7FH+M/liNmYptishCw18uRXgHAACE9xsL7zHZwns+wnq/6bKmR7yT+8VNMb8joUoDAADC+/VKIy7rVfYhK2P0ZC/lHq8+1ErlePQx1tmnsTOlxhgAACC8Y0Jihr2tI7DOIq/zbxr2RlUfmdxvXu3rSeVsN3U7xR06Q3gHAACE9yt2H3FZhSO8x/RVp5tRJVM5D3xMS89y6yulSgMAAML7dYrdSzt2eH+V/cHPsRwU/+VHtnAdc9x7QrUGAACE9+sUM+jZ3lQaeyabXKd/CdFO5UuWxgzvRcTl31GtAQAA4f06xex5LzyDal/POt8LiNYqZ7eJFa6bjaaDmDISAAAQ3tEhibis3cjLX5+xnA6Rvz/1LD8AAADCO0YJ13vLz2L17L8q7rjwczcekpHDe0rVBgAAhPfrM4+4rMLys1hvVd1OoKwOijd1ZOrZ+AEAACC843/cj7jsmA2DzUTKK1YjIhk5vCdUbQAAQHiHy7PlZ7GGzLxpOuPBY63HHeEdAAAQ3nGNdjeyLnt2NQAAILzjXGL1vBcT267niZUPAAAA4f0GJBGXZeuRnlPErSgfAABAeMdZwvuYbz0tJlZu+xGX/UK1BAAAhHfgMsL7geIFAACEd5w6hErT6zEHAACApw/H45FSmLa5/B+iPKh75hXf5V1ayF8oznj1IuL+oLEEAAAI7wAAAMAtYtgMAAAAQHgHAAAAQHgHAAAAbtA/KQLckLT277YHT4vav/s8/HuJ2+2y1/gzHQEAgIF4YBXXpgrlqflnIul+4DKfa2F+Z0LuFIN9c7sfeizjrbaNe9OgIdgDAEB47+1fkv7PyN9RWP59p/gv61lIWivuFI821brXA9k1WZrQmkYI6qEhd6nzvsRpIWlltv1u5O0tzDYXE6hDqaS/ev7tS+042NIw8XK0NGjTGy2LXNKnAX9f1b+t+fASuH7mZl8s9H1Hxasp1xV1F4T3aUnNwTk78fdWgW1Xu/APtTInoFNvy4vZjq3ZlsMF1oHMhOfZGdfjlzMF2czUm7szbvuX2gXyksK7bTtyQhTh/UThvXlNyVV24sBfYq5frnN/vX761l1bB9mexj2m6FIfWC3OdOGYmRb+R0n/Nhf7tTmR9LU2AfTU7iU9me3YS9pcyMU4M+v7l1n/2Y0ds9X2/3nm4C71vxM0NR/NOWUu4PTXlD8I78E2I5z7F+a6Uv9kFDUI73HtJH2ewIn3o6S/zcm378W/OPO2zEwQ/uuMDaNLCq3nCsrFDW//KRqzW4oBZ2xAphSDl0T9nucBrsalzzazVnnbfgq9rx9NwMx6hoC14t2KHeLBhPhzDomoW5qyueXAmk+kblyCXzou+olpCD066n6mslcP32t2Luwpku+8eJwvU5UdPJnjmrXS9T2PNFZ4t5V/qvehb3PqLgjv03UwQflpIuszUzkMpU/wPUj65ggV52qMLHS+BzLnJkQ93vDxOTf1m14mf77hJ5X9uZkV4d3ZgET7+bvwrJu5yjvHzQ6JR4rR+9ht2jSuUwfqLq7ZNbykqZjgOn3sGQCmdtv+4UxBZqmyd2SMi9mLygeWqs/rROv1wlzgCe7jnTds44zvKRqcIOgTKOPaUQS4Jdfwkqb9RNeruhuQneAE9CJ7z0/19PyQAPhoLjSnutjkijNE5FnvUxr6TvOZ6n1YRXrGIFeNb7+1h3FPbeOoa2lHp8DcNDCrujLX+3z4RaRz0qL2HYneZ4TqM7VlVZ/ntfXd1c4ZxQnq87JWtqptTxExeC3Ndy1q59O9pjkd49A6Mtf7Ox3qdbBvHRm7Dp5qnYHbcDwer+ET6nA8HgvzWR+Px9x8NuZnu2M82Ujbsjkej4uA5S7NtvW1OMF+3Aws650p73mk9UlMvdi3fGcauQwWpn4OdTgej1uz/qlj/83N/8vM74XWj+KMx3zqWKcY5w7XPp171tGtqTtt31s4yjLx2A+FZx3vqrv1upIHlpPPvs88v39nzk+h+yqvndv2A7cv5JNHOBb61t+5uWYdPOrIYuQ6mHhua4x1Dj03pZ5195LOeXz4/M/nnzfWVnlR2PR2y9qnby/oOmJvXLPnJqTHqnohyFL9ptlaa7zZEKoemL493c+mx74YoYyruw6ZKYMxe8Nj9Lh/M/vXZwiWa5xuWqv3zGwTvm8ezec3hQ078/2OB1M3E0ePcujxNDN3IKqXnR1OfDzfq3xW6Js5zkK+P1M5A5PP9iWaztR/ieP6FKsOPkj6z8h1cGd+f9+xvK3neaTvOgM35x83tr2hF6WtOdkn6j+V42xiJ6KtuUC/Bf7dg4bNZz9GcH9VObtIqvFv/W/M9n8dsQEz5MVjz5J+NgFs6LMThcoHNxNJv5pQda2BfMxG1Z8BYXEe+B2zlv287Xk8xZguc8jx/Bh4HC89gnvd00TCe/VmUFsHyaXVwY3HOt+NuM7ATfonReAd+nO9916HnoweThQwfe1q6xNyMVgp/vSR654X+s86/UNfB3NRKQJDg2+jqk8v95v6T0/qu15bE+RzTWdmpxhWLcdHV6B5NXW3+t2qfO4sQWSn7rtk941l53rv0VzI/hbmqkG9bwRa2zMuX/X92O/EbP+9ZZlDGoCuhsOzCXr1bVpZyute71MAK6DMns3fVduXOepqfsbOlOpZCVs9+dqyXq6G/dh1sL7stjq4sCw7xjrva9fMTe3fU0sd/9o4DvYBnTJFbV2eLPW26LFcYFw3NuY9xni1ec8x8ZvI2xJjDOeqx5jymPtt3XMsdzqBOreIuC75gDH+8xNvd3087CWPec896/jacSzPA57bKALG8G5ayt02ZnjlsV2rlnLYOsbs9xnznjm2adXjOZck4NyYtYy59132KY5Xl3WP7xu7Ds4d176D57Uod9SrkHXeBZRHGuF5jXSk6ywfPtE//6D50qv3danwYSfLCW7LOnA7Ys6+kqmcUjNE9czCFO5g7Bw9TqEW6je7zlfzt6eeRWNver5+1fRm8Kh6Vts+a7MNn1qOiXrv4UdLHcxatj3Tj2OXqztvXV7lHi6wd/TMzj33WVt52epkrDsZX9Q+HCQzvZs+6yXH8jctvaq2qWCTCdXXl467HHNLub6anx0CyjSkDrqWffCsg651zgLX+X6i103g7Ajv/QPMOvBvZprm6683PcLmUEmP8qveoLefWD04nLj8q+CenXnbtxO9sH7q+HyUe3jSc2N/LHuGytwRTvr8XbPM+zZokpZG6IfGJ+l5TDcb92+e5ZUN6OxYj1Rmp3Kv8o3WhaMhZpssIfc47/Stg+uOZW89rgkx15nwDhDeo8oV3vs+xfBeBP7+PMJ3bhQ21r756utrkSn8bsY38TDXGF4sQWHZMwz6BBxXkI7RqLIFxL/1/gD+YoTySx3r4nPM7vXj3YqZx3q+eDTmT3XOeNP3L39zfVzXjAe5Z37q0+AvLN+VnqgOpj2Pm77rDNwcHlgdHkJDhn4sJrgNp34z3UphL42qHsi8tuA+V7+7DwT3+L7I3jOYWOpi7rnMV33fw39/omNxZ0Ki7RirprCstmVnAtM2wncnAzsGbA+6Jh3rNaVzwi4gaCbm2H+0NLLyRh2zlatvHTzo+04SnwfiiwhlkTjO+2OtM0B4R5AiMLzPJ7gN+xMH1jzwbzJd56uvM4VP+3aNjZhTq95GvK8FV1eZNsNkNV/41C3VPV3jzAT8B7NNr6YzIo+4HvuBv1vNEX5t9nqf0efRcoznjTJomnodjL3OiZjlBSC8Rw7vt2ZIeMwDA+uXK714S+FTbn6+0kZMbB8oAh30PrVfJr/eyzvFfVHTlDsRpnQOeLTsh/qD8LML3K4ZhyBAeL/WIDsVSeDv7wZ8T8hdipAhCpfGN1BVqrmRcV5vF9aAys1nYUL5wgTztnB1r7JT4tRD/NIbrE97U6ea+2PeqHPN//888e16tZzfngeWEwDCe1Su8aWXYhG4rUMCa4iVrneISOgMCrkYLjOVY/sSQ2bzBT2J2Y5U9hcZVVP0Db3rFTKtq60TobiBOnawhPOkse8urQ7uLeH9FhtnwGiYbQYhQXLIxTxkmEg1/vYazfXjrfJbLYtLCFZ1M01rjvAh4WpjGtQ/68eZXkIb9a6gHRLYUsd6XrO57Hfg9h1lkFxA/RpanwAQ3icbBqZw8fAN728DQqRt3t821zxEJLTXneB+PrbGauZ5XB0kHWufUz27cWx8ugLwXnGGp9mGEz16hrbMEmJfbyC8+3RoFBdYB4ue571zrjNAeL8xIUNmpjZedhsQqrte3kFgpSxuIbyv1N3zmVuOq1OFkOYbRe90miELB5UvD7PV33lHYFvfYL1fyT4Dy1sj/G7149znK49G0eqMdfAS17mtfgKTw5j30yomtC6bgIbHi4b1hocE1m+67vHdIUHK5yU0GDeQftH3D1rPzHGcOY7nXD8+mH3KoU+FfhzHvjX1ztZ5kMje896noyG3fHf1AOzSUpcXsr+w7U2Xd/fNVY6230vlfmB9bamD60bQn9XK1FUHP1nKdHvC4yZ0nVdnXue2a1cunjkC4f1mg9iUwvtG9gfVbIa+JClV2JCZa75NmgSWxYZD7OxycwGvh607la+0f6nV17ZQtjrx+jaP7Zmk/zTWd27Cs60B/9rzONyrnNL0kyXA/20a5rtaKHLNQz/kfHMudxo+/7qrk2StH4cWzWp1sDDl1VYHT12mMdb51JMW7B379b9r//0sHr4F4f3ihTyE820i4XEj/x73N7l77K69gUNjDzLhoeotnFlCadebU0/9rgJXgPZd3zeFD+1qNh4SR+dA/Q2vLr/rNsc5v8g9v/7QOvj1DGUaY51P3Xmxl32aS2ByGPM+TBbwu5szrmcV2v8+cXAPDazX/pBaEvj7vJRpGnamHr8E/M2bpN902l73eoD+vcffvUY65jPTgFCP8rq19xm8mu1eqL2XuW8d/F3h0/TGPG4WF7bOKwEXgJ73YaH03vN3+96GHhISE7OOy4D1rLyYk2eM8Bhyd2J3A3XG1zOHWKvDicuoCiKZucDfdxzr646G6C7SNru+Y23WY6Ufh/00fTO/uwmoj13rn5vldX1/9TyAzwPxzz3KcG/5u6FDMfYD697OLKMIrAdTrYO7jrKKuc599mnI+m5VTp+am/W+rzUqdnSoYCo+HI/Ha9gO342IOV5tFxCKf5N/z3vIDnlpnLRivCzqi+I9oDPX9+MFu3zW9b5Vtbro3AXsB3qBpmtuaZjuNd07R1WDvhl4dmf8/p14EDB2h8CU6+AlrzMwKfS895MHBPdnjTdk5j7y8mKH59AXc1x7r0bIWEpCzbQddFnPJJw7IBHQxlGwzsDtYcx7v0DqO6tANVPLpfhkQslGce5QJD0C0bUKLQtuzwIAAMJ7hOBeBPx+psvrbZqpnCniL7OtQ0I84Z2yAAAAhPezBnffebp/0+VPefZgQvxWp3nTHL3NAAAAhPfBVipfchIS3DdXtP2PKu8gLKkKAAAA58MDq+1SlQ9whsyN7nr986WbSfp3YMMkvZI60Hc79uItqQAAgPA+udAulXMlZzrdWOXqhUZFIyzuzb8neh9nvTD/HmN2mj/NP28plGbq99a9ryK8AwAAwnt0c733sHa90KTp2QT94sTrvFH4tI7z2jYu5T8M6FQBfq7pPahZ6P15h9DGz5Ax/AmHJQAAaLrlMe9zlQ9i7lW+SOjfkj4GBPdvkn4xYbi4kG0+mG3OTDj8rHKoTx9rdc/jHhrEFxMut2WPsiK8AwAAwnvEQLYyIfSbRzB7UTkM4jdJP+nyx7YfVPbcJ2b7Q83U3fN+TbPH7E1dOWXjEgAA4Du3PmymCmT1UJZaQu41T2FY9SqvVd55CHGvshd/E2ld0ok3iNbyf0HXUAsBAAAQ3jsVN7rdK/PP0ACfRwzvU+9tPqi8A3Pf829DJByKAACgiXne0QzwoUNo7uSe/z20IXQJvc19H6jd9ShXhs4AAADCO1plCn8wM9bLmx4uoHyKAX8bWq4p1REAABDe0aZ6kDdGyOwTdK/5La67SOUKv3q0MWV+bHwOpm7m4tkCXFadXpu6S53GKaSND3WL8I4J2yisl7htiMcLgbV3eF9SFYNlKh9E/7ekJ9mfT5ipvMvzSdJ/TOihoYRLqNMfZb9DSZ3GGP5qfNYUCeEd07YN/P3FjQTW4oTh/U70dPhKTPn+qfC34T6YC9OGYrwa1YvV6p9LCx5zs97UacS8fjU/uEDMNoO28P4UeKFxnSxClnOny3rx1djBP1P4MKZbDWqzgct5MsuiwXT55rqMZ2i6gvt9pDqdanpvr8bpPVAE14Ged7iE9hIvIgfWa7SX9NqjLJh1pjvkuIL7N5VvEv7FfH6T9KVlP9yLW8OYdnB/adTpX6nTwG2h5x1tQTNmYA257fuk8sGr/RWWa6GwOxEzvT98iR9tHcH9xZSbqw6tzCe3/P1Hs9yC4sUZbBzB/cXU2cJxHFT1+ZPjnLqhTiPQL43/5u7NRNDzjlMFrFA5ZXH1ZTFUJvtt4K8q7wR1Nf7WKocTvFHmmIilpEdHcE89wneu8u4S5xHEUDQ+O4qE8I7rsusISaGedJ1vGd0qfL73OzHu3TeMvASW1c7x+w/iLbc4Pdu58lVhY9Y3sr9sjzoNXAmGzSCWtgvLXtKzwh+WWes6p0vcqByaERpUN+K2ZSWTfSjWqkcZbUz5NpeX6sfhSql+nIJvo+5e/swSnPKOv0lN/U/lHkZRmONk71F/6gq99+Jmptzq3/GL7L28S/NZONbp2TRQtx3rlOjHZ1uqcpyb/5dZvuObWfbGUV5pbfm278wb56WNY5/u5T9ULff8mTz2951jWaF1eiV7D37qsV1Zrd7NHHVuo+5e2LZ93FXv2o4X1/q91tat6FH+C7Ns2/H2arZ361kvmutfr08Ls9314ZOfHXWmWqeF4/r5YtbLtc22fdBVV/OW/+d7XKS1sryzlGVRO09owLkrddT1F7Ps9dVeM4/H4zV8fBVXtC35yOuRHMPMO5aXHftZTmz/pAHrnkYq28rmSo7XGJ9t5ON743mM5QH7uf4pLH/n+t2F4/e76sY84LySm9/fetbd9Hg87gPXaR14HKVm232+Z2fZ3jxw/ar6srT8v4PHOc31t7uIdXA/oE7vAq8by8B9XJhzWeg+nrfU77TleJkHHBeF5/6rzschx9ve47pUOOpa5nk9bzs2Q7Y57XGdaTtvdJ1jF45613YcLwIzUR5QPgeP5V/kh2EzaOuF8PXq0brdKHymlervkisr2+pORKgn8eKmyqOjrgzpyf/Q+ORnOu6KHnepnnr0Nm4d5Wgrm78UPtf4x8B9Um27z/fcK97Dl1vLuWnmeawtHXcM+0gjLqsqT986vVb5EqiQffxgen1Dp1btU7+r/fQQsG57j3VbmG0IWZ87U1ZZj3PMnx6/Nzfr9Bi4/Ifanatz3Q39j8KmN703f5P1qEM+5TMzv3t10/8S3hFyUWo7kHz0CUMzc9K+tukS+wbDa2zMxAg5IfVwquZyz54j0+B7lvutxfcB9SrzDCxJR4Cs1uk1QoMz14/DINqWfa9408pue54Dl57L8ilnW3A+xQOCK7mH8b3V9nFbOEoC9nHfueub9fW143iYmfPlvKOx2HW8uZ5R+jOg/iWewb2qP65G1IvH/jjHtKBpx/a1rXNVlmlAfb231NG2enCOjhjCOyYf3n0vVhv163G+xnmKi55lca2NmdCgYwsZ+ys45mwX7d8l/aT3sdkL899fBhy3d5ZQ8Nl8vur9TtrKEm7eVM5o8qG2TjHvBwIAAA1mSURBVImkn2V/UDILqNvVhf5ns8xq2b84QlTWCIZVD/MvjgBR74WuhwXb+eWx4zhbWsrmm/qNsU3O1CBNJP1h+fmrKcN5bR//ZOqHKyT3CeCueqeOIFivH4uWuncv9wPsa0dw/9w43uYq59J/dSwj6XG8vZrj97P5577WoLA1qr+YdVrU1uuDOTfYGsz1+lOv8zYfPH6nq9Nh4zgnN88TH8zP3hz5YB5wnngz+2XeqAcvjmP5X1d1FWTMO2PeLZ9VwHocApe9OPa3upIx7zHKYhcwpvPaPvkZj+0xx7xve9R537H0bcdvGjhuumt79x77Ju1xjs48xui2Lb+rjti2NQsco973GZ0swrk11jj7rnNLFvCcRN96V/R87mfj+fzC0rH8tv09dzwTsAlY/65jOu+xzeuAY9T3+AkZ8573GGu+ML/jk2tCx7LPHctOGPOOazYPvMUU2iO+c/Te+PhD1/X21Z2j99T3bkQxoR74RP4zMZxLLukY+Dn1sRd6fA3pmX1T99zhtlk3ur5zyB2QrOPO3duI5b8OXJ+lpTy3A44f2/lh7Pr25NjmQ8d++DrgDotPvXP9Xdc0sCv5Pb+QOXrc285fB8ffPQWch3/vOKbTE58DYsgc+2HXce1bDahDbcs/OI7Dq7pbTXhHU9uYW9vJtM9wllz9hoxI5di4/IrKO1e/B3mnEuCrxl71gNWGQ6i3VOG3sIc0ZtceAbG5PolHfej7cNizR/AfM9Da3sHgmhvdNmTm0uq+bYjVN88yzj2X17feuRoNXcNqDo5rUjMUP/YIyVVQfvYM3bI0fNc9zgG7Ec8BQyWyDwnaeO7P5rXvTn7DkLoayXvCO27JRmFP3Q+ZQ3Wp/r1on3Q9474PGjaDzL05UaVnWPfMXFg+mSDj0yuL4Y2lVGXP017hM8CMETYTs05VI27WcznFBI5F3wdXl5HL0xbQxp4hI+kRiurhqDm2eOa5zn2fX9oO+L1FR9B+DriWbXvuq3Xkc0Am/1lXxuxw6Luf+pblq3jfCS9pwv+cDEKm4ZI5cecDL5Sp2p/2b/NoLnjZFQTGncrbqX/0/PuZyqn8vqrfS4pC68pK9pckneqh4v0Zgs65Qnr1gNpc/WfpcF0A9z1DejLSOk2lA+PJ0khdd4T3Vw27K3BwHNenDl4hdaKw7P+uDpWXAeenIuD88No4P91HWraroZWM1DitXoi2MGX7MLHjJfEsn9BG6zbw/E94x82F9pXsM0p0ySKF1kzlnLl93JnQ+k3vPZGXam1OWk8DllFNy7dW/DfLVW/WbFu/7YnKau8IOklHHdh0XED/msjFMB9YD/qWocvC1KcHXb/CEfzqdcs2ZGY90v5IB3ROZLK/4XQTKWD2Ob8cTniOuBtp2X3Du2+orYYiZidowJ373EIQJ7zfnMxywt15nBwTvU/btOx5cvhN8caebs3y/hywjEfz+ar+r8ae0j4dEtxmKoexfDLlsTXlEXrRDK0n3054Ii5ags6m40Ix5YtF17zTlTe9v6o907i935nnsVl/ffyfumwbc/w0G6/r2r/HbrjuLY2GGOH9YUA4hztcj7nswvOYfjbH3PwEjX0Q3s96IE19jHQa8Lt3tQvMJ8v/b96eTCL1RPym+A9mbczFK+RhWZsn83nV+8wnMRoZ9bl1xx5fGCPAN8ujqg/7WgNv1zguFrU62KeubE58rHyz7ItswHqkI6+vz7nHVv/fag3SvaU+j/nG3UT2HuVqnbaOBtE1hveVKQtbUIrVcC1kH7KTDzhvNdXrz8FxHBQR63Ts+rgfsO2xtiVxNL5i2DqC+9faOaC5f/KJHT+LgDp0dW8+JbwPO0G5TH18ZsyT4RjbOkZwr1+4UrW/XS6kYfNR728NfNZ77/OudrLdO8JbWgu05xgqEDPA1+vD/UiNj6qxdEpby7Y8qH9PZTbycdt1PNpe0PRqtmev87DdcXkx63TND4ztzTnjoXFOWTiuN7Hq/sZyzN/1bJRmjo6QXePfHwcEr3TEEOu61vssP3HU265Gy5DMEWO7E8v1pppWczfRY2Xog9YLz2Wi4RpmmwltuS0nvC3phNdtzOBeP2gXsr8pb4gHlT1pf6gc1/yXpL/1/Xzef9U+n0zwP+cY30zuN9FNzeZM3+l642FoIzgZ2FDqOgfNey4j13mH+Swd9fIWZnrYOLY95tzutg6MWHU6t/ysORXnbkAjNpH9HQD7E9dH3+tos9HyZmlcJwMa+kWE7Usd9XDnsS+mFN6XnvV17tinhPcbCe9Z4O+vJrwtUwzvr5L+64QBrZo68fcLCa5jB4hU9tc933p4dwWU+8CwMw8MX30eVvMJHX16884x+0TXhTW9omPvzbIfmz3V28iNGdv1bKaw9zlsZL97ubEETluI9amv65ECbJsnz4Zy7rFuW89tsh3L95YGXIxtT3qW6TmPub3sU4b65CzbRBkv4iHWmwjvttZ/l4eJXmBSTW9Yz2dzsjxHS3ht9u/XGz9Gq7sRnyfamPF5sc6YAevZcZEvPI7z1JRvyHG3d3xf0nKOWnvu55CL8vxMjaasY53WE6mXe8f6hWgGPJ9APFQh+53He1NHuurEVva7SC+WdXXNa7/pCMm57MPv8hMd8/OO68adJVxvPfbbY0f9Xjj+bn2m462toRZi6HBd2/Z/6lj3TPZn9aZy/iC8n+BA7mOKL/jJJ7QuXyX9bNbpnLfIq9dR/3yhIX4RuX4sJlgOmzN/v+tlX/cqh0DtTNmlep85Jzc//6vHhW/n+L5tI1jN9f4Sq5lnXbddAJtBqr7cx5Hrna1BUb3hOGk0UKqpWu8dHSanPt/uHXVirfcX3HQFo64gMdZLyTLZ77bdNer0srYtG7PNtjrx1rKtK0t9rnr6m/u5mn/7k+OacYpGfPVSuqxRp5ayP/Bb7ceDZyPpT7ONi0b9zmWfCarvW8ZdDTdbg8J2bmnb3rZA/uw4hy9r58Y+14AXR1luLOeKjewPtb+IN3T7Ox6Pl/pZHYfZHY/H+US2JT+e386U6XzC+zw5Ho+b4/F4OF6GzcjlcG6HidSLRaQ6sbb8bMzjtb7M+Qj1Oq0tv6nwLNfYqmWnlv+Xe6xT4bmPdDwe9x3r4lMG+476MladnptzcgxZx3ctR7qWpj3L3LWf+9i3XNNilHEaoZ6G1Nmh67cJPC/57r+h5+CDWYZt2X3qUB6wry7yc6k972v1fxtlyG3IU/Vcfjrxd76ZFvgXSb9K+knvL2KZ8sNoVY9LovJhzm8TW79nlcNbqjLNRi6Hn833vZ54O19N+U/l7tXO1InnAcv4Tf7Pw6wV9hzCV491O6jf8zivI5frl4mt06nvCq0H9MwPveuYDjzHvUn6xaMcqndt9BmWd8rZh7722P5ly7pVz1e99Czb30a485L1XJdz3ymtstRbz/VPxYOqQS5xqsh/mYPuc6TlJWfclmrc6qb237HnPS0aJ6trOEAOtXKrXiNffU7x3ED1kpzm5xyNmVzvQ2qyEcsg9tz5Y4WdzJTHXcB2ZbXjpDlFYNt3bT1+94sJ5T4X+U0tFM481jvX+1zrY72JcWW295NnWa5M/fh7AnUiN+eHjwMbAH84Quv+BHW6Gs6wVtgQr6+1fee7nTv5v0m3Gi5yyg6fjanvPmXxbI7rrn20N8fySv6daL7L7nu9rhpcd577IJf/szuFhr8UsasTZS3/2btC6ymMD8fjkVLAtUnNSSQxoXausBcP1ac8q15qVFgaQ1NVNWgW6v/Spedao6TQ5c0AsKyVwYNl/+5qjZFmYz5xNH5ddS2r/d1drezWtXKr6qE8ll2Na6+mXLuv1clqf9QfwFvUGnCq7bdN7ftTSzAMaYQltSBZbedLbTnNRl0ViFK9v1OhGqvt6qjYe9SzkHKsr3tq6ajZepbBwdI4OsXUubZtzzrqdGHW6zDwe6rjp6p/VYfFvlb/Dh7noUXPeldYtvGX2r7Oavu0Xu/36v+W7XmtjlfrPqvV86JxTMWup01Z7Xjr2gfVw+LVPtt1rG/9GtFcx6JxHPfZf0mjDj3UriuH2vr7lGWfdUgsx/tOV9RIILwDt8Pnzk5BMQHfNQL/bfn5T6K3cExd4R24af+kCICbceDiBwSH96avBHcA5/QPigAAgB8sZB+7u6FoAJwTPe8AAJRjhhcq704lsve6P4u7VwAI7wAAnF31IGjbbCs5xQTg3Bg2AwBAty+i1x0A4R0AgEl7k/S7+r1ECwCiY6pIAACk/yXpfzd+9n9VzkX9/ygeAIR3AAAAAEEYNgMAAAAQ3gEAAAAQ3gEAAADCOwAAAADCOwAAAADCOwAAAEB4BwAAAEB4BwAAAEB4BwAAAAjvAAAAAAjvAAAAAAjvAAAAAOEdAAAAAOEdAAAAAOEdAAAAILwDAAAAILwDAAAAILwDAAAAhHcAAAAAhHcAAACA8A4AAACA8A4AAACA8A4AAAAQ3gEAAAAQ3gEAAAAQ3gEAAADCOwAAAADCOwAAAADCOwAAAEB4BwAAAEB4BwAAAEB4BwAAAAjvAAAAAAjvAAAAAAjvAAAAAOEdAAAAAOEdAAAAILwDAAAAILwDAAAAGOj/A5TMRP+mdVrEAAAAAElFTkSuQmCC" alt="PBGC logo">
+    <div class="header-title">
+      <h1>E.Adj Generator</h1>
+      <p>Estimated Benefits Adjustment Analysis &middot; v0.1.0</p>
+    </div>
+  </div>
+</header>
+<nav class="app-nav" aria-label="Main">
+  <button type="button" data-nav="generator" aria-current="page">E.Adj generator</button>
+  <button type="button" data-nav="welcome">Welcome</button>
+  <button type="button" data-nav="help">Help</button>
+</nav>
+
+<main id="main">
+<!-- ================= GENERATOR ================= -->
+<section class="page active" id="page-generator" aria-label="E.Adj generator">
+  <ol class="stepper" aria-label="Steps">
+    <li data-step="1" aria-current="step"><span class="step-num">Step 1</span>Case header</li>
+    <li data-step="2"><span class="step-num">Step 2</span>Scraper prompt</li>
+    <li data-step="3"><span class="step-num">Step 3</span>JSON import</li>
+    <li data-step="4"><span class="step-num">Step 4</span>Review</li>
+    <li data-step="5"><span class="step-num">Step 5</span>Download</li>
+  </ol>
+
+  <!-- Step 1 -->
+  <div class="step-panel" id="step-1">
+    <h2>Step 1 — Case header</h2>
+    <p class="lede">Fill in the memo header. Case number is text — leading zeros are kept.</p>
+    <div class="card">
+      <div class="field-row">
+        <div class="field"><label for="f-toEbls">TO — EBLS, CSD Branch 2A</label><input type="text" id="f-toEbls" autocomplete="off"></div>
+        <div class="field"><label for="f-toAuditor">TO — Auditor, AED/[branch]</label><input type="text" id="f-toAuditor" autocomplete="off"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label for="f-toSerco">TO — Serco Operations</label><input type="text" id="f-toSerco" autocomplete="off"></div>
+        <div class="field"><label for="f-fromActuary">FROM — Actuary, ASD/[section]</label><input type="text" id="f-fromActuary" autocomplete="off"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label for="f-fromSection">FROM — ASD section</label><input type="text" id="f-fromSection" placeholder="D" autocomplete="off"></div>
+        <div class="field"><label for="f-fromContractActuary">FROM — Contract actuary (if any)</label><input type="text" id="f-fromContractActuary" autocomplete="off"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label for="f-fromFirm">FROM — Actuarial firm (if any)</label><input type="text" id="f-fromFirm" autocomplete="off"></div>
+        <div class="field"><label for="f-ccSupervisor">CC — Benefits Specialist Supervisor, CSD Branch 2A</label><input type="text" id="f-ccSupervisor" autocomplete="off"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label for="f-memoDate">Memo date *</label><input type="date" id="f-memoDate"></div>
+        <div class="field"><label for="f-caseNumber">PBGC case number *</label><input type="text" id="f-caseNumber" autocomplete="off" placeholder="e.g. 01234567"></div>
+      </div>
+      <div class="field"><label for="f-planName">Plan name *</label><input type="text" id="f-planName" autocomplete="off"></div>
+      <div class="field-row">
+        <div class="field"><label for="f-bpd">Bankruptcy Petition Date (BPD)</label><input type="date" id="f-bpd"></div>
+        <div class="field"><label for="f-dopt">Date of Plan Termination (DOPT) *</label><input type="date" id="f-dopt"></div>
+      </div>
+      <div class="field"><label for="f-dotr">Date of Trusteeship (DOTR)</label><input type="date" id="f-dotr"></div>
+    </div>
+    <div class="btn-row"><span class="spacer"></span><button type="button" class="btn" data-next="2">Next: scraper prompt</button></div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step-panel" id="step-2" hidden>
+    <h2>Step 2 — Scraper prompt</h2>
+    <p class="lede">Download the prompt. Feed it, with the plan documents, to your LLM. The LLM returns JSON. You upload that JSON in Step 3.</p>
+    <div class="card">
+      <h3>What to attach to the LLM</h3>
+      <ul class="tight">
+        <li>Plan document, amendments, restatements, union contracts (all eras)</li>
+        <li>R5 Preliminary Plan Summary</li>
+        <li>PF factor sets, per era</li>
+        <li>§436 Evaluation, with its IPS number</li>
+        <li>Participant data (SPECTRUM download from TRMD)</li>
+        <li>Estimated asset figure from the auditor</li>
+        <li>NRAD Pension Information Profile (Funded GL Ratio)</li>
+        <li>Earnings Offsets Summary, if any</li>
+        <li>Employee Contributions Processing Evaluation (TP 36), if any</li>
+        <li>Successor Plan Determination (TP 61), if any</li>
+      </ul>
+      <p><strong>Do not attach</strong> the DEL or the E.Adm memo. They are not E.Adj inputs. The 4022(c) amount is never paid as an estimated benefit.</p>
+      <div class="btn-row">
+        <button type="button" class="btn" id="btn-download-prompt">Download scraper prompt</button>
+        <button type="button" class="btn secondary" id="btn-view-prompt">View prompt</button>
+      </div>
+      <pre class="log" id="prompt-preview" hidden></pre>
+    </div>
+    <div class="btn-row"><button type="button" class="btn secondary" data-next="1">Back</button><span class="spacer"></span><button type="button" class="btn" data-next="3">Next: JSON import</button></div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step-panel" id="step-3" hidden>
+    <h2>Step 3 — JSON import</h2>
+    <p class="lede">Paste or upload the JSON the LLM returned. The app checks it against the schema. Nothing is sent anywhere.</p>
+    <div class="card">
+      <div class="field">
+        <label for="json-input">JSON input</label>
+        <textarea id="json-input" rows="12" spellcheck="false" placeholder='{"caseData": {...}, "sections": {...}}'></textarea>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn" id="btn-validate">Validate JSON</button>
+        <button type="button" class="btn secondary" id="btn-upload-json">Upload JSON file</button>
+        <input type="file" id="file-json" accept=".json,application/json" class="sr-only" aria-label="Upload JSON file">
+        <button type="button" class="btn secondary" id="btn-load-demo">Try demo</button>
+      </div>
+      <div id="validation-result" aria-live="polite"></div>
+    </div>
+    <div class="btn-row"><button type="button" class="btn secondary" data-next="2">Back</button><span class="spacer"></span><button type="button" class="btn" id="btn-to-review" disabled>Next: review</button></div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step-panel" id="step-4" hidden>
+    <h2>Step 4 — Review</h2>
+    <p class="lede">Check each section. The LLM output is a proposal only. Approve each section to continue. The §9 conclusion is a suggestion — you choose the final box.</p>
+    <div id="review-list"></div>
+    <div class="btn-row"><button type="button" class="btn secondary" data-next="3">Back</button><span class="spacer"></span><button type="button" class="btn" id="btn-to-download" disabled>Next: download</button></div>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="step-panel" id="step-5" hidden>
+    <h2>Step 5 — Download</h2>
+    <p class="lede">Download the filled memo, the inputs JSON, and the audit log. The memo is a Word document from the 2024 template (version of 11/25/2024).</p>
+    <div class="card">
+      <div class="btn-row">
+        <button type="button" class="btn" id="btn-download-docx">Download &lt;case&gt;EAdj.docx</button>
+        <button type="button" class="btn secondary" id="btn-download-inputs">Download inputs JSON</button>
+        <button type="button" class="btn secondary" id="btn-download-audit">Download audit log</button>
+      </div>
+      <p class="kbd-note" id="download-note"></p>
+    </div>
+    <h3>Audit log</h3>
+    <pre class="log" id="audit-log" aria-live="polite"></pre>
+    <div class="btn-row"><button type="button" class="btn secondary" data-next="4">Back</button></div>
+  </div>
+</section>
+
+<!-- ================= WELCOME ================= -->
+<section class="page" id="page-welcome" aria-label="Welcome">
+  <h2>Welcome</h2>
+  <p class="lede">This app writes the Estimated Benefits Adjustment Analysis memo for a terminated plan. It follows the 2024 template, version of 11/25/2024.</p>
+  <div class="card">
+    <h3>How it works</h3>
+    <ol class="tight">
+      <li><strong>Case header</strong> — memo addresses, case number, plan name, BPD, DOPT, DOTR.</li>
+      <li><strong>Scraper prompt</strong> — download the prompt; feed it with the plan documents to your LLM (Microsoft Copilot in the office, any LLM at home).</li>
+      <li><strong>JSON import</strong> — upload the JSON the LLM returns. The app validates it against the schema.</li>
+      <li><strong>Review</strong> — check all 9 sections, approve each one. The §9 conclusion is a suggestion; you choose the final box.</li>
+      <li><strong>Download</strong> — the filled memo as <code>&lt;case&gt;EAdj.docx</code>, plus inputs JSON and audit log.</li>
+    </ol>
+    <p>The LLM never writes the memo and never decides an ambiguous answer. The app validates, you review, only approved JSON generates the document. No LLM is in the calculation path.</p>
+  </div>
+  <div class="card">
+    <h3>What the memo covers</h3>
+    <ul class="tight">
+      <li>§1 Bankruptcy termination (Policy 5.14-1)</li>
+      <li>§2 UCEBs (Policy 5.14-3)</li>
+      <li>§3 IRC §436 limitations (Policy 5.14-2, TP 14)</li>
+      <li>§4 Payee data review (Process 9.6)</li>
+      <li>§5 Offsets from another plan or partial payment</li>
+      <li>§6 Successor plan determination (TP 61)</li>
+      <li>§7 Asset allocation and funding for PC3 (Process 10.3)</li>
+      <li>§8 Benefits currently in pay — Tables 1–6 (Process 10)</li>
+      <li>§9 Whether assets impact participants' benefits</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>Try it first</h3>
+    <p>Use the synthetic demo case (Maplewood Fabricators Pension Plan, case 87654321). It runs end to end with no real data. All demo SSNs are clearly synthetic (000-00-0001 style).</p>
+    <div class="btn-row"><button type="button" class="btn" data-nav-goto="generator">Start the generator</button><button type="button" class="btn secondary" id="btn-demo-welcome">Load the demo case</button></div>
+  </div>
+</section>
+
+<!-- ================= HELP ================= -->
+<section class="page" id="page-help" aria-label="Help">
+  <h2>Help</h2>
+  <div class="card">
+    <h3>What do I attach to the LLM?</h3>
+    <p>See Step 2. The plan documents, R5, PF factors, §436 Evaluation, participant data, estimated assets, NRAD PIP, plus the Earnings Offsets Summary, TP 36 evaluation, or TP 61 determination if any apply. Do not attach the DEL or the E.Adm memo.</p>
+  </div>
+  <div class="card">
+    <h3>The JSON failed validation. What now?</h3>
+    <p>Read the error list in Step 3. It names the missing or wrong field. Fix the JSON in the text box and validate again, or ask the LLM to fix the named fields. Common causes: a missing section, a §3 or §6 outcome spelled wrong, a §9 checkbox missing, or a table row missing SSN or name.</p>
+  </div>
+  <div class="card">
+    <h3>How is the §9 conclusion decided?</h3>
+    <p>The app suggests a conclusion: impacted by assets if one or more of 9.1–9.4 is checked, or 9.5 applies and the Funded GL Ratio is 80% or higher. Not impacted if none of 9.1–9.4 is checked, or 9.5 applies and the ratio is below 80%. You choose the final box in Step 4. The memo shows the box you chose.</p>
+  </div>
+  <div class="card">
+    <h3>How does §6.2 work?</h3>
+    <p>Answer all six screening questions. All No means no determination is needed (outcome 6.2). Any Yes means a determination is needed (outcome 6.3). N/A is allowed only for the substantial-owner and majority-owner questions, when no benefit was provided for that owner.</p>
+  </div>
+  <div class="card">
+    <h3>Where does my data go?</h3>
+    <p>Nowhere. This is a single file opened from disk. It makes no network calls, stores nothing on a server, and never sends your data anywhere. Inputs stay in your browser until you download them.</p>
+  </div>
+  <div class="card">
+    <h3>Files and versions</h3>
+    <ul class="tight">
+      <li>Template: Estimated Benefits Adjustment Analysis Memo - Updates 2024, version of 11/25/2024.</li>
+      <li>App: E.Adj Generator v0.1.0.</li>
+      <li>Design system: PBGC Design System v1.1.0 DRAFT (COLA/Section 508 review, not approved).</li>
+      <li>Synthetic data only. No live case data.</li>
+    </ul>
+  </div>
+</section>
+</main>
+
+<footer class="app-footer">
+  <p>E.Adj Generator v0.1.0. Template: Estimated Benefits Adjustment Analysis Memo - Updates 2024, version of 11/25/2024.</p>
+  <p>PBGC Design System v1.1.0 DRAFT. Synthetic data only. No network calls.</p>
+</footer>
+</div>
+<script>
+"use strict";
+
+/* PROMPT-START */
+var EADJ_SCRAPER_PROMPT = "# E.Adj \u2014 Estimated Benefits Adjustment Analysis Scraper Prompt\n\nUse this prompt with an LLM of your choice. Attach the plan documents\n**and** the other associated documents \u2014 plan document, amendments,\nrestatements, union contracts, the R5 Preliminary Plan Summary, the PF\nfactor sets per era, the \u00a7436 Evaluation (with its IPS number),\nparticipant data (SPECTRUM download from TRMD), the estimated asset\nfigure from the auditor, the NRAD Pension Information Profile (Funded\nGL Ratio), the Earnings Offsets Summary if any, the Employee\nContributions Processing Evaluation (TP 36) if any, and the Successor\nPlan Determination (TP 61) if any \u2014 together with this prompt. The LLM\nmust return **only** the JSON payload described below. That JSON is a\n*proposal*: it is fed back into the E.Adj Generator app, validated\nagainst `schema/eadj.schema.json`, reviewed by a human section by\nsection, and only approved JSON is used to write the Estimated Benefits\nAdjustment Analysis memo. The LLM never fills the memo and never\ndecides an ambiguous answer on its own.\n\nDo **not** attach the DEL or the E.Adm memo. They are not E.Adj inputs.\nThe 4022(c) amount is never paid as an estimated benefit \u2014 do not\nreturn it as an input to estimated benefits.\n\n## Your task\n\nYou are preparing the Estimated Benefits Adjustment Analysis memo for a\nterminated defined-benefit pension plan. For each of the 9 sections\nbelow, find the answer in the documents, state the facts and\ncircumstances, and give the citation (document, section, page) where\neach answer comes from. Return the answers as JSON matching the schema\nin `schema/eadj.schema.json` (also summarised in \"Output format\" below).\n\n## Rules\n\n- **Summarise, do not copy verbatim \u2014 ASD STE 100 minimal style.**\n  Every facts text must be the **smallest string that conveys the\n  meaning**: a noun phrase or short clause, never a full paragraph,\n  one idea per line. Keep ages, service years, percentages, dollar\n  amounts, and dates **exact**. Standard abbreviations: `yr`/`yrs`,\n  `mo`, `hrs`, `%`, `\u00a7`, `excl.`, `equiv.`, `avg comp`, `svc`\n  (service). If stripping verbiage would lose meaning (a condition,\n  an exception, a date), keep the longer form and say why in `note`.\n  A longer value that is still true beats a minimal value that is\n  wrong.\n- **One entry per section.** Every one of the 9 sections must be\n  present in `sections`. Do not omit a section.\n- **Yes/No answers.** Sections 1, 2, 4, 5, 7 take `yes` or `no`.\n  Section 3 takes one outcome: `3.1`, `3.2`, `3.3`, or `3.4`.\n  Section 6 takes one outcome: `6.1`, `6.2`, or `6.3`. Section 9\n  takes true/false for each of 9.1\u20139.5.\n- **Citation for every answer**: document name, page number, and plan\n  section number in the JSON `citation` object. No citation, no\n  answer. The app renders it as a minimal code, e.g. `D1 \u00a72.1 p3`\n  (D1 = first document, \u00a7 = plan section, p = page) \u2014 the full\n  document name lives once in the sources list, never repeated in a\n  cell.\n- **Tables 1\u20136 rows: SSN and name exactly as in the participant data\n  you were given.** The memo's tables have SSN as the first column\n  and Participant Name as the second. Copy both exactly from the\n  SPECTRUM participant data. Do not invent a participant, do not\n  invent a name, and do not complete a masked or partial SSN \u2014 if the\n  SSN is masked in your source, return the masked form as given and\n  say so in `note`. Money is a number (dollars, monthly), no currency\n  symbol, no commas. Dates are ISO format `YYYY-MM-DD`.\n- **Dates are ISO format `YYYY-MM-DD`. Case number is text, with\n  leading zeros preserved (never a number).**\n- **Do not guess.** A missing or ambiguous answer is a correct\n  answer. A guessed value is an error. If you cannot find an answer,\n  set the section to `no` with facts \"Not found in the documents\n  provided\" and say so in `note` \u2014 do not invent a provision.\n- **Never return a full masked value** (no full SSN, no full account\n  number) beyond what the participant data you were given already\n  contains.\n\n## Section 1 \u2014 Plan Termination during Bankruptcy (Policy 5.14-1)\n\nRule: if a plan terminates while the sponsor is in bankruptcy, and the\nsponsor filed on or after 09/16/2006, PPA 2006 requires the Bankruptcy\nPetition Date (BPD) to be treated as the Date of Plan Termination\n(DOPT) for (1) the benefits PBGC guarantees, and (2) the amount of\nbenefits in priority category 3 (PC3).\n\nAnswer two questions, yes or no each:\n\n- `q1`: Did the plan sponsor file for bankruptcy on or after\n  09/16/2006?\n- `q2`: Did the plan terminate while the company was in bankruptcy?\n\nIf yes to both: use BPD for guarantees and PC3 allocation. State the\nfacts and circumstances, including the date of the event(s). If no to\neither: no further action is required \u2014 say so in `facts`.\n\n## Section 2 \u2014 Shutdown or other Unpredictable Contingent Event Benefits, UCEBs (Policy 5.14-3)\n\nRule: benefit increases from a shutdown or other unpredictable\ncontingent event are phased in as if a plan amendment had been adopted\non the date the event occurred. In plans with \"creep provisions\", the\nphase-in date is the end of the creep period. UCEB payment may be\nfurther limited by IRC \u00a7436, addressed in Section 3.\n\nQuestion: does the plan provide shutdown, supplemental, unreduced, or\nother early retirement benefits due to an unpredictable contingent\nevent (for example, permanent shutdown, permanent lay-off, etc.) that\noccurred on or after 07/27/2005?\n\n- If yes: give the date(s) of the event(s) in `eventDates` and state\n  the facts.\n- If no: state the facts and circumstances.\n\n## Section 3 \u2014 Benefit Restrictions for Underfunded Pension Plans, IRC \u00a7436 Limitations (Policy 5.14-2, TP 14)\n\nRule: IRC \u00a7436 places restrictions on certain benefit accruals and\npayments based on the adjusted funding target attainment percentage\n(AFTAP) for a plan's year beginning with PY2008 for most plans. These\nlimitations may affect the calculation, valuation, and/or payment of\nbenefits by PBGC.\n\nRead the \u00a7436 Evaluation and select the most applicable outcome.\nDelete the others (the app keeps only the one you select):\n\n- `3.1`: DOPT was before FD-PY2008. IRC \u00a7436 did not apply.\n- `3.2`: Based on the \u00a7436 Evaluation, IPS # (give the number), the\n  plan did not provide benefits that were potentially subject to the\n  \u00a7436 limitations.\n- `3.3`: Based on the \u00a7436 Evaluation, IPS # (give the number), none\n  of the \u00a7436 limitations were applicable.\n- `3.4`: Based on the \u00a7436 Evaluation, IPS # (give the number), the\n  following \u00a7436 limitations were applicable \u2014 list only those that\n  apply in `limitations`: `b` (UCEB), `c` (plan amendments increasing\n  plan liabilities), `d` (prohibited payments), `e` (benefit\n  accruals).\n\nDo not re-derive \u00a7436. The \u00a7436 Evaluation is the source; record its\noutcome and its IPS number.\n\n## Section 4 \u2014 Payee Data Review for Future Changes in Benefits (Process 9.6)\n\nQuestion 1: does the plan provide for any non-level benefits or other\nbenefit forms that may require future benefit adjustments at a certain\ndate? Examples include:\n\n- Benefit forms with step-downs, such as those providing a Social\n  Security offset starting at age 62.\n- Benefit forms with step-up increases on a certain date.\n- Disability benefits that convert at early or normal retirement\n  dates.\n- Remainders of period-certain benefits being paid to beneficiaries,\n  such as five-year certain & continuous (5C&C) benefits, that will\n  end on a certain date.\n- Temporary or other supplements (see Policy 6.2-1 and TP 51).\n- Temporary recoupments instituted by the prior plan sponsor before\n  DOPT for overpayments.\n\n- If yes: list each form in `forms` and state the facts. Continue to\n  Question 2.\n- If no: state the facts and circumstances.\n\nQuestion 2: are any participants receiving benefits in the forms\nreferenced in Question 1? (Consult EBLS or field office as required.)\n\n- If yes: give the IPS location of the documentation in\n  `ipsLocation`, and confirm in `spectrumConfirmed` whether EBLS or\n  the field office has entered end-dates in Spectrum as required for\n  non-level benefits.\n- If no: state the facts and circumstances.\n\n## Section 5 \u2014 Offsets from Another Plan or a Partial Payment of Benefits\n\nQuestion: does this plan contain offsets to be applied to benefits?\nExamples include, but are not limited to:\n\n- Black Lung Benefits\n- Disability benefits from another plan\n- Earnings offsets applicable to supplemental benefits (see Policy\n  6.2-1 and TP 51)\n- Partial cash-outs\n- Pension benefits from another plan, whether from the same or a\n  related plan sponsor or by a union such as the United Mine Workers\n  of America (UMWA)\n- Purchased annuities\n- SSA benefits\n- Workers' Compensation\n- Plan loans\n- Fiduciary Breaches, as determined by OGC\n\n- If yes: list the offset types present in `offsetTypes`, describe\n  the offset(s) in `description`, and provide guidance for benefit\n  administration.\n- If no: state the facts and circumstances.\n\nNote: PBGC does **not** apply earnings offsets in estimated benefits\n(Policy 6.2-1 \u00a7B). Section 5 only identifies the offsets.\n\n## Section 6 \u2014 Successor Plan Determination (TP 61)\n\nRule: a plan trusteed by PBGC may be a successor to an earlier plan (a\npredecessor plan). A successor plan is a continuation of the\npredecessor plan. PBGC treats the successor and predecessor plans as a\nsingle plan in calculating and valuing benefits under the successor\nplan.\n\nSelect one outcome:\n\n- `6.1`: Earlier Plan Not Identified. No determination is needed\n  because no evidence of an earlier plan was found in plan records,\n  PBGC records, and/or other available information.\n- `6.2`: Successor Plan Determination Not Needed \u2014 Benefits Would Not\n  Be Affected. Based on the answers to the screening questions, a\n  determination is not needed because benefits in the current plan\n  would not be affected.\n- `6.3`: Results of Successor Plan Determination. Give the Successor\n  Plan Determination IPS number in `ipsNumber` and say in\n  `isSuccessor` whether the plan is a successor to the prior plan.\n\nScreening questions (answer all six when the outcome is 6.2 or 6.3).\nWould the determination affect:\n\n- `mgb`: the maximum guaranteeable benefit (MGB) limitation for any\n  participant?\n- `phaseInNonOwner`: phase-in for a participant who is not a\n  substantial or majority owner?\n- `phaseInSubstantial`: phase-in for a substantial owner's benefit\n  (plan had a NOIT or NOD before 1/1/2006)? Answer `na` if no benefit\n  was provided under the plan for a substantial owner.\n- `phaseInMajority`: phase-in for a majority owner's benefit (plan\n  had a NOIT or NOD on or after 1/1/2006)? Answer `na` if no benefit\n  was provided under the plan for a majority owner.\n- `pc3`: allocation of assets to PC3?\n- `section436g`: the \u00a7436(g) exception to the \u00a7436(b), (c), or (e)\n  limitations for a plan in effect less than 5 plan years, in\n  aggregate with any predecessor plan?\n\nRule: no determination is needed if all answers are \"No\". A\ndetermination is needed if one or more answers is \"Yes\".\n\n## Section 7 \u2014 Estimated Asset Allocation and Funding for PC3 (Process 10.3)\n\nQuestion 1: are there participants in pay status subject to benefit\nadjustments?\n\nQuestion 2: if yes to Question 1, are any of those participants\nretired or eligible to retire on DOPT-3 (use BPD-3 for PPA 2006\nbankruptcy plans)?\n\n- If yes to Question 2, a PC3 analysis is performed for consideration\n  when determining benefit adjustments. Say in `pc3Done` whether it\n  was performed.\n- Give the estimated asset figure from the auditor in\n  `estimatedAssets` (dollars, number) when known.\n- State the facts and circumstances.\n\n## Section 8 \u2014 Review Benefits Currently in Pay and Identify Payees for Benefit Adjustments (Process 10)\n\nGive the data basis and source: estimated guaranteed benefits for\nretired participants were calculated based on `dataBasis` data\nobtained from `dataSource` (for example, SPECTRUM participant data as\nof DOPT, obtained from the TRMD SPECTRUM download).\n\nCounts (integers, 0 or more):\n\n- `supplements`: retirees receiving supplements as of DOPT (Table 1).\n- `ucebPhaseIn`: retirees receiving supplements subject to phase-in\n  of UCEBs under PPA 2006 as of DOPT (or BPD for bankruptcy plans).\n- `disabled`: participants who are persons with disabilities\n  recognized by the plan.\n- `shouldReduce`: retirees who recently attained an age at which a\n  change in benefit (for example, SSA benefit offsets, non-level\n  annuity forms, or offsets from other plans) should have been\n  implemented but was not (Table 2).\n- `mgbExceeds`: pre-DOPT retirees whose monthly benefit is greater\n  than their Maximum Guaranteeable Benefit (Table 3).\n- `phaseInAffected`: participants affected by the phase-in limitation\n  (Table 4).\n\n`narrative`: describe briefly whether or not the supplements \u2014 in\nwhole or in part \u2014 are guaranteeable under the accrued-at-normal\nlimitation, and how the benefits of the participants are affected or\nnot affected by the Maximum Guaranteeable Benefits Limitation.\nConsider the effects of PPA 2006 on UCEBs. Remember that participants\nwho became disabled between BPD and DOPT are subject to accrued-at-\nnormal limitations.\n\n`aggregateLimit`: describe participants entitled to guaranteed\nbenefits from more than one PBGC-trusteed plan who are affected by\nthe Aggregate Limit, if known now \u2014 or note that this information is\nnot yet available (Table 5).\n\nTables 1\u20136: one row per participant, from the participant data and\nthe actuary's analysis. The app does not invent rows.\n\n- Table 1 (supplements as of DOPT): SSN, name, form of benefit,\n  monthly benefit in pay status, supplementary portion, date\n  supplement ends, accrued at NRD, estimated benefit after the\n  non-guaranteed portion has been cut out.\n- Table 2 (benefits that should have been reduced): SSN, name, form\n  of benefit, monthly benefit in pay status, date benefit should be\n  reduced, estimated benefit after reduction.\n- Table 3 (benefits exceed the MGB): SSN, name, monthly benefit in\n  pay status, maximum guaranteeable monthly amount.\n- Table 4 (phase-in limitations): SSN, name, monthly benefit in pay\n  status, reduction due to phase-in, monthly benefit after reduction.\n- Table 5 (aggregate limit): SSN, name, monthly benefit in pay\n  status, reduction due to aggregate limit, monthly benefit after\n  reduction.\n- Table 6 (majority owner limitation): SSN, name, monthly benefit in\n  pay status, reduction due to majority owner limitation, monthly\n  benefit after reduction.\n\n## Section 9 \u2014 Estimated Determination of Whether Assets Impact Participants' Benefits\n\nCheck all that apply (true/false each):\n\n- `c91` (9.1): Mandatory or Voluntary Employee Contributions have\n  been identified.\n- `c92` (9.2): Based on completion of Section 7, an estimated\n  Priority Category 3 analysis was completed.\n- `c93` (9.3): Participants' benefits are estimated to be impacted\n  by PBGC limitations. If true, say in `c93ab`: `A` \u2014 based on\n  Section 8, one or more in-pay participants' benefits are impacted\n  by one of PBGC's limitations; or `B` \u2014 no in-pay participants'\n  benefits are impacted, but one or more deferred participants could\n  have their benefit impacted by one of PBGC's limitations.\n- `c94` (9.4): A Majority Owner has been identified and the plan was\n  in effect for less than 10 years.\n- `c95` (9.5): Participants' benefits are estimated to be limited by\n  other limitations not defined in Sections 9.2 and 9.3, and the\n  associated liabilities from those limitations are anticipated to be\n  valued in Priority Category 6. Examples: death benefits in excess\n  of the QPSA, lump-sum death benefits, and grow-ins.\n\nGive the Funded GL Ratio from the most recent Pension Information\nProfile completed by NRAD in `fundedGlRatio` (percent, number). It is\nrequired when 9.5 applies.\n\nState the facts and circumstances.\n\nConclusion: the app computes a suggestion from the checkboxes and the\nFunded GL Ratio \u2014 impacted by assets if one or more of 9.1\u20139.4 is\nchecked, or 9.5 applies and the Funded GL Ratio is 80% or higher;\nnot impacted if none of 9.1\u20139.4 is checked, or 9.5 applies and the\nFunded GL Ratio is less than 80%. The actuary confirms or changes it\nin review. Leave `conclusion` null to accept the suggestion.\n\n## Output format\n\nReturn **only** valid JSON, no markdown fences, no commentary, no\nexplanation. The JSON must have exactly these top-level keys:\n\n```json\n{\n  \"caseData\": {\n    \"toEbls\": \"string or null\",\n    \"toAuditor\": \"string or null\",\n    \"toSerco\": \"string or null\",\n    \"fromActuary\": \"string or null\",\n    \"fromSection\": \"string or null\",\n    \"fromContractActuary\": \"string or null\",\n    \"fromFirm\": \"string or null\",\n    \"ccSupervisor\": \"string or null\",\n    \"memoDate\": \"YYYY-MM-DD\",\n    \"caseNumber\": \"string (text, leading zeros preserved)\",\n    \"planName\": \"string\",\n    \"bpd\": \"YYYY-MM-DD or null\",\n    \"dopt\": \"YYYY-MM-DD\",\n    \"dotr\": \"YYYY-MM-DD or null\"\n  },\n  \"sections\": {\n    \"s1\": {\n      \"q1\": \"yes | no\",\n      \"q2\": \"yes | no\",\n      \"facts\": \"string\",\n      \"citation\": { \"document\": \"string\", \"page\": \"string or number or null\", \"section\": \"string or null\" },\n      \"note\": \"string or null\"\n    },\n    \"s2\": {\n      \"answer\": \"yes | no\",\n      \"eventDates\": \"string or null\",\n      \"facts\": \"string\",\n      \"citation\": { \"document\": \"string\", \"page\": \"string or number or null\", \"section\": \"string or null\" },\n      \"note\": \"string or null\"\n    },\n    \"s3\": {\n      \"outcome\": \"3.1 | 3.2 | 3.3 | 3.4\",\n      \"ipsNumber\": \"string or null\",\n      \"limitations\": [\"b | c | d | e\"],\n      \"citation\": { \"document\": \"string\", \"page\": \"string or number or null\", \"section\": \"string or null\" },\n      \"note\": \"string or null\"\n    },\n    \"s4\": {\n      \"q1\": \"yes | no\",\n      \"forms\": [{ \"description\": \"string\" }],\n      \"q2\": \"yes | no | null\",\n      \"ipsLocation\": \"string or null\",\n      \"spectrumConfirmed\": \"yes | no | null\",\n      \"facts\": \"string\",\n      \"citation\": { \"document\": \"string\", \"page\": \"string or number or null\", \"section\": \"string or null\" },\n      \"note\": \"string or null\"\n    },\n    \"s5\": {\n      \"answer\": \"yes | no\",\n      \"offsetTypes\": [\"string\"],\n      \"description\": \"string or null\",\n      \"facts\": \"string\",\n      \"citation\": { \"document\": \"string\", \"page\": \"string or number or null\", \"section\": \"string or null\" },\n      \"note\": \"string or null\"\n    },\n    \"s6\": {\n      \"outcome\": \"6.1 | 6.2 | 6.3\",\n      \"screening\": {\n        \"mgb\": \"yes | no\",\n        \"phaseInNonOwner\": \"yes | no\",\n        \"phaseInSubstantial\": \"yes | no | na\",\n        \"phaseInMajority\": \"yes | no | na\",\n        \"pc3\": \"yes | no\",\n        \"section436g\": \"yes | no\"\n      },\n      \"ipsNumber\": \"string or null\",\n      \"isSuccessor\": \"yes | no | null\",\n      \"citation\": { \"document\": \"string\", \"page\": \"string or number or null\", \"section\": \"string or null\" },\n      \"note\": \"string or null\"\n    },\n    \"s7\": {\n      \"q1\": \"yes | no\",\n      \"q2\": \"yes | no | null\",\n      \"pc3Done\": \"yes | no | null\",\n      \"estimatedAssets\": \"number or null\",\n      \"facts\": \"string\",\n      \"citation\": { \"document\": \"string\", \"page\": \"string or number or null\", \"section\": \"string or null\" },\n      \"note\": \"string or null\"\n    },\n    \"s8\": {\n      \"dataBasis\": \"string\",\n      \"dataSource\": \"string\",\n      \"counts\": {\n        \"supplements\": \"integer\",\n        \"ucebPhaseIn\": \"integer\",\n        \"disabled\": \"integer\",\n        \"shouldReduce\": \"integer\",\n        \"mgbExceeds\": \"integer\",\n        \"phaseInAffected\": \"integer\"\n      },\n      \"narrative\": \"string\",\n      \"aggregateLimit\": \"string\",\n      \"tables\": {\n        \"t1\": [{ \"ssn\": \"string\", \"name\": \"string\", \"form\": \"string or null\", \"monthlyBenefit\": \"number\", \"supplementaryPortion\": \"number or null\", \"supplementEnds\": \"YYYY-MM-DD or null\", \"accruedAtNrd\": \"number or null\", \"estimatedBenefit\": \"number or null\" }],\n        \"t2\": [{ \"ssn\": \"string\", \"name\": \"string\", \"form\": \"string or null\", \"monthlyBenefit\": \"number\", \"reduceDate\": \"YYYY-MM-DD or null\", \"estimatedBenefit\": \"number or null\" }],\n        \"t3\": [{ \"ssn\": \"string\", \"name\": \"string\", \"monthlyBenefit\": \"number\", \"maxGuaranteeable\": \"number or null\" }],\n        \"t4\": [{ \"ssn\": \"string\", \"name\": \"string\", \"monthlyBenefit\": \"number\", \"reduction\": \"number or null\", \"afterReduction\": \"number or null\" }],\n        \"t5\": [{ \"ssn\": \"string\", \"name\": \"string\", \"monthlyBenefit\": \"number\", \"reduction\": \"number or null\", \"afterReduction\": \"number or null\" }],\n        \"t6\": [{ \"ssn\": \"string\", \"name\": \"string\", \"monthlyBenefit\": \"number\", \"reduction\": \"number or null\", \"afterReduction\": \"number or null\" }]\n      },\n      \"citation\": { \"document\": \"string\", \"page\": \"string or number or null\", \"section\": \"string or null\" },\n      \"note\": \"string or null\"\n    },\n    \"s9\": {\n      \"c91\": \"boolean\",\n      \"c92\": \"boolean\",\n      \"c93\": \"boolean\",\n      \"c93ab\": \"A | B | null\",\n      \"c94\": \"boolean\",\n      \"c95\": \"boolean\",\n      \"fundedGlRatio\": \"number or null\",\n      \"facts\": \"string\",\n      \"conclusion\": \"impacted | notImpacted | null\",\n      \"citation\": { \"document\": \"string\", \"page\": \"string or number or null\", \"section\": \"string or null\" },\n      \"note\": \"string or null\"\n    }\n  },\n  \"sources\": [\n    { \"name\": \"string\", \"format\": \"H | E | null\", \"used\": \"U | NU | null\" }\n  ]\n}\n```\n\nEvery one of the 9 sections must be present in `sections`. `sources`\nlists every document you used, with format H (hard copy) or E\n(electronic) and whether it was used (U) or not (NU).\n\n## Workflow reminder (for the human, not the LLM)\n\n1. Download this prompt from the E.Adj Generator app.\n2. Feed the plan documents and associated documents + this prompt to\n   your LLM (Microsoft Copilot in the office, any LLM at home).\n3. Take the JSON the LLM returns and upload / paste it back into the\n   E.Adj Generator app.\n4. The app validates the JSON against the schema, flags missing /\n   ambiguous / uncited items, and you review and approve each section.\n5. Only approved JSON writes the filled memo Word document.\n";
+/* PROMPT-END */
+
+var EADJ = {
+  version: "0.1.0",
+  templateVersion: "11/25/2024",
+  designSystem: "v1.1.0 DRAFT",
+  templateName: "Estimated Benefits Adjustment Analysis Memo - Updates 2024"
+};
+
+var SECTION_TITLES = {
+  s1: "1. Plan Termination during Bankruptcy",
+  s2: "2. Shutdown or other Unpredictable Contingent Event Benefits (UCEBs)",
+  s3: "3. Benefit Restrictions for Underfunded Pension Plans (IRC §436 Limitations)",
+  s4: "4. Payee Data Review for Future Changes in Benefits",
+  s5: "5. Offsets from Another Plan or a Partial Payment of Benefits",
+  s6: "6. Successor Plan Determination",
+  s7: "7. Estimated Asset Allocation and Funding for PC3",
+  s8: "8. Review Benefits Currently in Pay and Identify Payees for Benefit Adjustments",
+  s9: "9. Estimated Determination of Whether Assets Impact Participants' Benefits"
+};
+
+var SECTION_REFS = {
+  s1: ["Policy 5.14-1 Benefits in PPA 2006 Bankruptcy Plans"],
+  s2: ["Policy 5.14-3 Plant Shutdown and Other Unpredictable Contingent Event Benefits"],
+  s3: ["Policy 5.14-2 §436 Benefit Limitations Under PPA 2006", "TP 14 §436 Benefit Limitations"],
+  s4: ["Process 9.6 Payee Data Review"],
+  s5: [],
+  s6: ["TP 61 Successor Plan Determinations"],
+  s7: ["Process 10.3 Analyze Data and Funding for PC3"],
+  s8: ["Process 10 Benefit Adjustments"],
+  s9: []
+};
+
+var S3_TEXT = {
+  "3.1": "DOPT was before FD-PY2008. Therefore, IRC §436 did not apply to the Plan.",
+  "3.2": "Based on completion of the §436 Evaluation, IPS # {ips}, the Plan did not provide benefits that were potentially subject to the §436 limitations. Therefore, §436 does not affect PBGC's administration of the Plan.",
+  "3.3": "Based on the §436 Evaluation, IPS # {ips}, none of the §436 limitations were applicable. Therefore, §436 does not affect PBGC's administration of the Plan.",
+  "3.4": "Based on the §436 Evaluation, IPS # {ips}, the following §436 limitations were applicable:"
+};
+var S3_LIMIT_LABELS = {
+  b: "§436(b) limitation on UCEB",
+  c: "§436(c) limitation on plan amendments increasing plan liabilities",
+  d: "§436(d) limitations on prohibited payments",
+  e: "§436(e) limitation on benefit accruals"
+};
+
+var S6_SCREEN_LABELS = {
+  mgb: "Application of the maximum guaranteeable benefit ('MGB') limitation to any participant's benefit under the current plan?",
+  phaseInNonOwner: "Application of phase-in to the benefit of any participant who is not a substantial owner or majority owner?",
+  phaseInSubstantial: "Application of phase-in to any substantial owner's benefit (provided the plan had a NOIT or NOD before 1/1/2006)?",
+  phaseInMajority: "Application of phase-in to any majority owner's benefit (provided the plan had a NOIT or NOD on or after 1/1/2006)?",
+  pc3: "Allocation of assets to PC3?",
+  section436g: "Application of the §436(g) exception to the §436(b), (c), or (e) limitations that applies when a plan has been in effect less than 5 plan years, in aggregate with any predecessor plan."
+};
+var S6_SCREEN_ORDER = ["mgb", "phaseInNonOwner", "phaseInSubstantial", "phaseInMajority", "pc3", "section436g"];
+
+var TABLE_CAPTIONS = {
+  t1: "Table 1: Participant(s) Receiving Supplements as of DOPT",
+  t2: "Table 2: Participants Receiving Benefits That Should Have Been Reduced",
+  t3: "Table 3: Participant(s) Whose Benefits Exceed the Maximum Guaranteed Benefit",
+  t4: "Table 4: Participant(s) Affected by Phase-In Limitations",
+  t5: "Table 5: Participant(s) Affected by the Aggregate Limit",
+  t6: "Table 6: Participant(s) Affected by Majority Owner Limitation"
+};
+var TABLE_HEADERS = {
+  t1: ["SSN", "Participant Name", "Form of Benefit", "Monthly Benefit in Pay Status", "Supplementary Portion", "Date Supplement Ends", "Accrued At NRD", "Estimated Benefit (after non-guaranteed portion has been cut out)"],
+  t2: ["SSN", "Participant Name", "Form of Benefit", "Monthly Benefit in Pay Status", "Date Benefit Should Be Reduced", "Estimated Benefit After Reduction"],
+  t3: ["SSN", "Participant Name", "Monthly Benefit In Pay Status", "Maximum Guaranteeable Monthly Amount"],
+  t4: ["SSN", "Participant Name", "Monthly Benefit In Pay Status", "Reduction due to Phase In", "Monthly Benefit after Reduction for Phase In"],
+  t5: ["SSN", "Participant Name", "Monthly Benefit In Pay Status", "Reduction due to Aggregate Limit", "Monthly Benefit after Reduction for Aggregate Limit"],
+  t6: ["SSN", "Participant Name", "Monthly Benefit In Pay Status", "Reduction due to Majority Owner Limitation", "Monthly Benefit after Reduction for Majority Owner Limitation"]
+};
+var TABLE_FIELDS = {
+  t1: ["ssn", "name", "form", "monthlyBenefit", "supplementaryPortion", "supplementEnds", "accruedAtNrd", "estimatedBenefit"],
+  t2: ["ssn", "name", "form", "monthlyBenefit", "reduceDate", "estimatedBenefit"],
+  t3: ["ssn", "name", "monthlyBenefit", "maxGuaranteeable"],
+  t4: ["ssn", "name", "monthlyBenefit", "reduction", "afterReduction"],
+  t5: ["ssn", "name", "monthlyBenefit", "reduction", "afterReduction"],
+  t6: ["ssn", "name", "monthlyBenefit", "reduction", "afterReduction"]
+};
+
+/* ---- safe storage: never throws, never touched at top level ---- */
+function eadjSafeStorage() {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return null;
+    var t = "__eadj_test__";
+    window.localStorage.setItem(t, "1");
+    window.localStorage.removeItem(t);
+    return window.localStorage;
+  } catch (e) {
+    return null;
+  }
+}
+var eadjStore = null;
+function eadjStoreGet(key) {
+  if (!eadjStore) eadjStore = eadjSafeStorage();
+  if (!eadjStore) return null;
+  try { return eadjStore.getItem(key); } catch (e) { return null; }
+}
+function eadjStoreSet(key, value) {
+  if (!eadjStore) eadjStore = eadjSafeStorage();
+  if (!eadjStore) return false;
+  try { eadjStore.setItem(key, value); return true; } catch (e) { return false; }
+}
+
+/* ---- state ---- */
+var state = {
+  caseData: null,
+  sections: null,
+  sources: [],
+  approved: {},
+  s9Conclusion: null,
+  audit: []
+};
+function auditLog(action, detail) {
+  var line = new Date().toISOString() + " | " + action + (detail ? " | " + detail : "");
+  state.audit.push(line);
+  var el = document.getElementById("audit-log");
+  if (el) el.textContent = state.audit.join("\n");
+}
+
+/* ---- formatting helpers ---- */
+function isNonEmptyString(v) { return typeof v === "string" && v.trim().length > 0; }
+function isIsoDate(v) {
+  if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  var d = new Date(v + "T00:00:00Z");
+  return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
+}
+function fmtDate(v) {
+  if (!isIsoDate(v)) return "—";
+  var p = v.split("-");
+  return p[1] + "/" + p[2] + "/" + p[0];
+}
+function fmtMoney(v) {
+  if (v === null || v === undefined || v === "") return "—";
+  if (typeof v !== "number" || isNaN(v)) return String(v);
+  return "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtYesNo(v) {
+  if (v === "yes") return "Yes";
+  if (v === "no") return "No";
+  if (v === "na") return "N/A";
+  return "—";
+}
+function citeText(c) {
+  if (!c || typeof c !== "object") return "";
+  var parts = [];
+  if (isNonEmptyString(c.document)) parts.push(c.document);
+  if (isNonEmptyString(c.section)) parts.push(c.section);
+  if (c.page !== null && c.page !== undefined && String(c.page).trim() !== "") parts.push("p" + String(c.page));
+  return parts.join(" ");
+}
+function escXml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function escHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/* ---- §9 conclusion suggestion ---- */
+function suggestConclusion(s9) {
+  if (!s9) return null;
+  var any914 = !!(s9.c91 || s9.c92 || s9.c93 || s9.c94);
+  if (any914) return "impacted";
+  if (s9.c95 === true) {
+    if (typeof s9.fundedGlRatio !== "number") return null;
+    return s9.fundedGlRatio >= 80 ? "impacted" : "notImpacted";
+  }
+  return "notImpacted";
+}
+
+/* ---- validation ---- */
+function validateEadj(data) {
+  var errors = [];
+  var warnings = [];
+  function err(msg) { errors.push(msg); }
+  function warn(msg) { warnings.push(msg); }
+
+  if (!data || typeof data !== "object" || Array.isArray(data)) { err("Input must be a JSON object."); return { ok: false, errors: errors, warnings: warnings }; }
+  var cd = data.caseData;
+  if (!cd || typeof cd !== "object") { err("caseData is required."); }
+  else {
+    if (!isNonEmptyString(cd.caseNumber)) err("caseData.caseNumber is required (text, leading zeros kept).");
+    if (!isNonEmptyString(cd.planName)) err("caseData.planName is required.");
+    if (!isIsoDate(cd.dopt)) err("caseData.dopt is required (YYYY-MM-DD).");
+    if (!isIsoDate(cd.memoDate)) err("caseData.memoDate is required (YYYY-MM-DD).");
+    if (cd.bpd !== null && cd.bpd !== undefined && cd.bpd !== "" && !isIsoDate(cd.bpd)) err("caseData.bpd must be YYYY-MM-DD or null.");
+    if (cd.dotr !== null && cd.dotr !== undefined && cd.dotr !== "" && !isIsoDate(cd.dotr)) err("caseData.dotr must be YYYY-MM-DD or null.");
+  }
+  var s = data.sections;
+  if (!s || typeof s !== "object") { err("sections is required (all 9 sections)."); return { ok: false, errors: errors, warnings: warnings }; }
+
+  function checkYesNo(v, label) { if (v !== "yes" && v !== "no") err(label + " must be yes or no."); }
+  function checkFacts(sec, label) { if (!isNonEmptyString(sec.facts)) err(label + ".facts is required."); }
+  function checkMoney(v, label) {
+    if (v === null || v === undefined) return;
+    if (typeof v !== "number" || isNaN(v) || v < 0) err(label + " must be a number (dollars) or null.");
+  }
+  function checkCount(v, label) {
+    if (typeof v !== "number" || !Number.isInteger(v) || v < 0) err(label + " must be an integer, 0 or more.");
+  }
+  function checkTableRows(rows, key, label) {
+    if (!Array.isArray(rows)) { err(label + " must be an array."); return; }
+    rows.forEach(function (r, i) {
+      if (!r || typeof r !== "object") { err(label + " row " + (i + 1) + " must be an object."); return; }
+      if (!isNonEmptyString(r.ssn)) err(label + " row " + (i + 1) + ": ssn is required.");
+      if (!isNonEmptyString(r.name)) err(label + " row " + (i + 1) + ": name is required.");
+      if (typeof r.monthlyBenefit !== "number" || isNaN(r.monthlyBenefit)) err(label + " row " + (i + 1) + ": monthlyBenefit is required (number).");
+      ["supplementaryPortion", "accruedAtNrd", "estimatedBenefit", "maxGuaranteeable", "reduction", "afterReduction"].forEach(function (f) {
+        if (r[f] !== undefined) checkMoney(r[f], label + " row " + (i + 1) + "." + f);
+      });
+      ["supplementEnds", "reduceDate"].forEach(function (f) {
+        if (r[f] !== null && r[f] !== undefined && r[f] !== "" && !isIsoDate(r[f])) err(label + " row " + (i + 1) + "." + f + " must be YYYY-MM-DD or null.");
+      });
+    });
+  }
+
+  // §1
+  var s1 = s.s1;
+  if (!s1 || typeof s1 !== "object") err("sections.s1 is required.");
+  else { checkYesNo(s1.q1, "s1.q1"); checkYesNo(s1.q2, "s1.q2"); checkFacts(s1, "s1"); }
+  // §2
+  var s2 = s.s2;
+  if (!s2 || typeof s2 !== "object") err("sections.s2 is required.");
+  else {
+    checkYesNo(s2.answer, "s2.answer"); checkFacts(s2, "s2");
+    if (s2.answer === "yes" && !isNonEmptyString(s2.eventDates)) err("s2.eventDates is required when s2.answer is yes.");
+  }
+  // §3
+  var s3 = s.s3;
+  if (!s3 || typeof s3 !== "object") err("sections.s3 is required.");
+  else {
+    if (["3.1", "3.2", "3.3", "3.4"].indexOf(s3.outcome) < 0) err("s3.outcome must be 3.1, 3.2, 3.3 or 3.4.");
+    if (s3.outcome !== "3.1" && !isNonEmptyString(s3.ipsNumber)) err("s3.ipsNumber is required unless outcome is 3.1.");
+    if (s3.outcome === "3.4") {
+      if (!Array.isArray(s3.limitations) || s3.limitations.length === 0) err("s3.limitations is required when outcome is 3.4.");
+      else s3.limitations.forEach(function (l) { if (["b", "c", "d", "e"].indexOf(l) < 0) err("s3.limitations entries must be b, c, d or e."); });
+    }
+  }
+  // §4
+  var s4 = s.s4;
+  if (!s4 || typeof s4 !== "object") err("sections.s4 is required.");
+  else {
+    checkYesNo(s4.q1, "s4.q1"); checkFacts(s4, "s4");
+    if (s4.q1 === "yes") {
+      if (!Array.isArray(s4.forms) || s4.forms.length === 0) err("s4.forms is required when s4.q1 is yes.");
+      else s4.forms.forEach(function (f, i) { if (!f || !isNonEmptyString(f.description)) err("s4.forms row " + (i + 1) + ": description is required."); });
+      if (s4.q2 !== "yes" && s4.q2 !== "no") err("s4.q2 is required when s4.q1 is yes.");
+      if (s4.q2 === "yes") {
+        if (!isNonEmptyString(s4.ipsLocation)) err("s4.ipsLocation is required when s4.q2 is yes.");
+        if (s4.spectrumConfirmed !== "yes") warn("s4: q2 is yes but spectrumConfirmed is not yes — confirm end-dates are entered in Spectrum.");
+      }
+    }
+  }
+  // §5
+  var s5 = s.s5;
+  if (!s5 || typeof s5 !== "object") err("sections.s5 is required.");
+  else {
+    checkYesNo(s5.answer, "s5.answer"); checkFacts(s5, "s5");
+    if (s5.answer === "yes") {
+      if (!isNonEmptyString(s5.description)) err("s5.description is required when s5.answer is yes.");
+      if (!Array.isArray(s5.offsetTypes) || s5.offsetTypes.length === 0) err("s5.offsetTypes is required when s5.answer is yes.");
+    }
+  }
+  // §6
+  var s6 = s.s6;
+  if (!s6 || typeof s6 !== "object") err("sections.s6 is required.");
+  else {
+    if (["6.1", "6.2", "6.3"].indexOf(s6.outcome) < 0) err("s6.outcome must be 6.1, 6.2 or 6.3.");
+    if (s6.outcome === "6.2" || s6.outcome === "6.3") {
+      var sc = s6.screening;
+      if (!sc || typeof sc !== "object") { err("s6.screening is required when outcome is 6.2 or 6.3."); }
+      else {
+        var anyYes = false;
+        S6_SCREEN_ORDER.forEach(function (k) {
+          var v = sc[k];
+          if (k === "phaseInSubstantial" || k === "phaseInMajority") {
+            if (v !== "yes" && v !== "no" && v !== "na") err("s6.screening." + k + " must be yes, no or na.");
+          } else if (v !== "yes" && v !== "no") err("s6.screening." + k + " must be yes or no.");
+          if (v === "yes") anyYes = true;
+        });
+        if (s6.outcome === "6.2" && anyYes) err("s6: outcome 6.2 requires all screening answers No (or N/A for owner questions); a Yes means outcome 6.3.");
+        if (s6.outcome === "6.3" && !anyYes) err("s6: outcome 6.3 requires at least one screening answer Yes; all No means outcome 6.2.");
+      }
+    }
+    if (s6.outcome === "6.3") {
+      if (!isNonEmptyString(s6.ipsNumber)) err("s6.ipsNumber is required when outcome is 6.3.");
+      if (s6.isSuccessor !== "yes" && s6.isSuccessor !== "no") err("s6.isSuccessor (yes or no) is required when outcome is 6.3.");
+    }
+  }
+  // §7
+  var s7 = s.s7;
+  if (!s7 || typeof s7 !== "object") err("sections.s7 is required.");
+  else {
+    checkYesNo(s7.q1, "s7.q1"); checkFacts(s7, "s7");
+    if (s7.q1 === "yes") {
+      if (s7.q2 !== "yes" && s7.q2 !== "no") err("s7.q2 is required when s7.q1 is yes.");
+      if (s7.q2 === "yes" && s7.pc3Done !== "yes") warn("s7: q2 is yes but pc3Done is not yes — PC3 analysis is required.");
+    }
+    if (s7.estimatedAssets !== null && s7.estimatedAssets !== undefined) checkMoney(s7.estimatedAssets, "s7.estimatedAssets");
+  }
+  // §8
+  var s8 = s.s8;
+  if (!s8 || typeof s8 !== "object") err("sections.s8 is required.");
+  else {
+    if (!isNonEmptyString(s8.dataBasis)) err("s8.dataBasis is required.");
+    if (!isNonEmptyString(s8.dataSource)) err("s8.dataSource is required.");
+    if (!isNonEmptyString(s8.narrative)) err("s8.narrative is required.");
+    if (!isNonEmptyString(s8.aggregateLimit)) err("s8.aggregateLimit is required.");
+    if (!s8.counts || typeof s8.counts !== "object") err("s8.counts is required.");
+    else {
+      ["supplements", "ucebPhaseIn", "disabled", "shouldReduce", "mgbExceeds", "phaseInAffected"].forEach(function (k) { checkCount(s8.counts[k], "s8.counts." + k); });
+    }
+    if (!s8.tables || typeof s8.tables !== "object") err("s8.tables is required (t1-t6, empty arrays allowed).");
+    else {
+      ["t1", "t2", "t3", "t4", "t5", "t6"].forEach(function (k) { checkTableRows(s8.tables[k], "s8.tables." + k, "s8.tables." + k); });
+      if (s8.counts && typeof s8.counts === "object") {
+        if (s8.counts.supplements > 0 && (!Array.isArray(s8.tables.t1) || s8.tables.t1.length === 0)) warn("s8: supplements count is " + s8.counts.supplements + " but Table 1 is empty.");
+        if (s8.counts.shouldReduce > 0 && (!Array.isArray(s8.tables.t2) || s8.tables.t2.length === 0)) warn("s8: shouldReduce count is " + s8.counts.shouldReduce + " but Table 2 is empty.");
+        if (s8.counts.mgbExceeds > 0 && (!Array.isArray(s8.tables.t3) || s8.tables.t3.length === 0)) warn("s8: mgbExceeds count is " + s8.counts.mgbExceeds + " but Table 3 is empty.");
+        if (s8.counts.phaseInAffected > 0 && (!Array.isArray(s8.tables.t4) || s8.tables.t4.length === 0)) warn("s8: phaseInAffected count is " + s8.counts.phaseInAffected + " but Table 4 is empty.");
+      }
+    }
+  }
+  // §9
+  var s9 = s.s9;
+  if (!s9 || typeof s9 !== "object") err("sections.s9 is required.");
+  else {
+    ["c91", "c92", "c93", "c94", "c95"].forEach(function (k) { if (typeof s9[k] !== "boolean") err("s9." + k + " must be true or false."); });
+    checkFacts(s9, "s9");
+    if (s9.c93 === true && s9.c93ab !== "A" && s9.c93ab !== "B") err("s9.c93ab (A or B) is required when 9.3 is checked.");
+    if (s9.c95 === true) {
+      if (typeof s9.fundedGlRatio !== "number" || isNaN(s9.fundedGlRatio)) err("s9.fundedGlRatio is required when 9.5 applies.");
+      else if (s9.fundedGlRatio < 0 || s9.fundedGlRatio > 100) err("s9.fundedGlRatio must be 0-100.");
+    }
+    if (s9.conclusion !== null && s9.conclusion !== undefined && s9.conclusion !== "impacted" && s9.conclusion !== "notImpacted") err("s9.conclusion must be impacted, notImpacted or null.");
+  }
+  // sources
+  if (data.sources !== null && data.sources !== undefined) {
+    if (!Array.isArray(data.sources)) err("sources must be an array.");
+    else data.sources.forEach(function (src, i) { if (!src || !isNonEmptyString(src.name)) err("sources row " + (i + 1) + ": name is required."); });
+  }
+  return { ok: errors.length === 0, errors: errors, warnings: warnings };
+}
+EADJ.validate = validateEadj;
+EADJ.suggestConclusion = suggestConclusion;
+
+/* ---- synthetic demo (Maplewood Fabricators Pension Plan, case 87654321) ---- */
+var EADJ_DEMO = {"caseData":{"bpd":"2023-03-15","caseNumber":"87654321","ccSupervisor":"L. Patel","dopt":"2024-06-30","dotr":"2024-09-15","fromActuary":"A. Novak","fromContractActuary":"K. Rivera","fromFirm":"Meridian Actuarial Group","fromSection":"D","memoDate":"2025-03-14","planName":"Maplewood Fabricators Pension Plan","toAuditor":"J. Okafor","toEbls":"R. Alvarez","toSerco":"M. Chen"},"sections":{"s1":{"citation":{"document":"Bankruptcy filing, D1","page":1,"section":"Ch. 11 petition"},"facts":"Sponsor filed Ch. 11 on 2023-03-15; plan terminated 2024-06-30 while in bankruptcy. BPD used for guarantees and PC3.","note":null,"q1":"yes","q2":"yes"},"s2":{"answer":"yes","citation":{"document":"Plan document, D2","page":14,"section":"\u00a75.4"},"eventDates":"2023-05-01","facts":"Plant shutdown benefits from permanent closure 2023-05-01; phase-in from event date.","note":null},"s3":{"citation":{"document":"\u00a7436 Evaluation, IPS 9C #87650001","page":2,"section":"Part 4"},"ipsNumber":"IPS 9C #87650001","limitations":["b","d"],"note":null,"outcome":"3.4"},"s4":{"citation":{"document":"Plan document, D2","page":9,"section":"\u00a74.2"},"facts":"2 non-level forms; 3 participants in those forms; end-dates entered in Spectrum.","forms":[{"description":"Social Security offset starting at age 62"},{"description":"Temporary supplement, ends at age 65"}],"ipsLocation":"IPS 9C #87650002","note":null,"q1":"yes","q2":"yes","spectrumConfirmed":"yes"},"s5":{"answer":"yes","citation":{"document":"Plan document, D2","page":21,"section":"\u00a77.1"},"description":"Black Lung offset fixed at benefit payable at separation. Earnings offsets apply to the temporary supplement; recorded only, not applied to estimated benefits.","facts":"2 offset types; Black Lung offset for 1 participant; earnings offsets on supplements.","note":null,"offsetTypes":["Black Lung Benefits","Earnings offsets"]},"s6":{"citation":{"document":"Plan records review, D3","page":1,"section":"History"},"ipsNumber":null,"isSuccessor":null,"note":"No earlier plan found in plan or PBGC records.","outcome":"6.2","screening":{"mgb":"no","pc3":"no","phaseInMajority":"no","phaseInNonOwner":"no","phaseInSubstantial":"na","section436g":"no"}},"s7":{"citation":{"document":"Auditor estimate, D4","page":1,"section":"Asset summary"},"estimatedAssets":12500000,"facts":"PC3 analysis completed; estimated assets $12,500,000 from auditor.","note":null,"pc3Done":"yes","q1":"yes","q2":"yes"},"s8":{"aggregateLimit":"No participant known affected by Aggregate Limit at this time.","citation":{"document":"SPECTRUM data, D5","page":1,"section":"Pay status"},"counts":{"disabled":1,"mgbExceeds":1,"phaseInAffected":2,"shouldReduce":1,"supplements":2,"ucebPhaseIn":1},"dataBasis":"SPECTRUM participant data as of DOPT","dataSource":"TRMD SPECTRUM download","narrative":"Supplements in part guaranteeable under accrued-at-normal limit; 1 supplement subject to UCEB phase-in. 1 retiree exceeds MGB; benefit cut to MGB.","note":null,"tables":{"t1":[{"accruedAtNrd":2050.0,"estimatedBenefit":2050.0,"form":"SLA + temp supplement","monthlyBenefit":2450.0,"name":"Alex Demo","ssn":"000-00-0001","supplementEnds":"2026-08-01","supplementaryPortion":400.0},{"accruedAtNrd":1680.5,"estimatedBenefit":1680.5,"form":"SLA + temp supplement","monthlyBenefit":1980.5,"name":"Blake Sample","ssn":"000-00-0002","supplementEnds":"2027-01-01","supplementaryPortion":300.0}],"t2":[{"estimatedBenefit":1900.0,"form":"SLA, SS offset at 62","monthlyBenefit":2200.0,"name":"Casey Test","reduceDate":"2024-05-01","ssn":"000-00-0003"}],"t3":[{"maxGuaranteeable":2800.0,"monthlyBenefit":3200.0,"name":"Dana Example","ssn":"000-00-0004"}],"t4":[{"afterReduction":2250.0,"monthlyBenefit":2450.0,"name":"Alex Demo","reduction":200.0,"ssn":"000-00-0001"},{"afterReduction":1600.0,"monthlyBenefit":1750.0,"name":"Ellis Trial","reduction":150.0,"ssn":"000-00-0005"}],"t5":[],"t6":[{"afterReduction":3200.0,"monthlyBenefit":4100.0,"name":"Finch Mock","reduction":900.0,"ssn":"000-00-0006"}]}},"s9":{"c91":false,"c92":true,"c93":true,"c93ab":"A","c94":false,"c95":true,"citation":{"document":"NRAD PIP, D6","page":1,"section":"Funded GL Ratio"},"conclusion":null,"facts":"PC3 analysis done; 1 in-pay participant impacted by \u00a7436(d) limit; grow-in liabilities in PC6; Funded GL Ratio 85%.","fundedGlRatio":85,"note":null}},"sources":[{"format":"E","name":"Bankruptcy filing, D1","used":"U"},{"format":"E","name":"Plan document, D2","used":"U"},{"format":"E","name":"Plan records review, D3","used":"U"},{"format":"E","name":"Auditor estimate, D4","used":"U"},{"format":"E","name":"SPECTRUM data, D5","used":"U"},{"format":"E","name":"NRAD PIP, D6","used":"U"}]};
+
+/* ---- ZIP writer (store only, no compression) ---- */
+var eadjCrcTable = (function () {
+  var table = [];
+  for (var n = 0; n < 256; n++) {
+    var c = n;
+    for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+function eadjCrc32(bytes) {
+  var c = 0xFFFFFFFF;
+  for (var i = 0; i < bytes.length; i++) c = eadjCrcTable[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function eadjZip(files) {
+  var chunks = [];
+  var central = [];
+  var offset = 0;
+  function u16(n) { return [n & 0xFF, (n >> 8) & 0xFF]; }
+  function u32(n) { return [n & 0xFF, (n >> 8) & 0xFF, (n >> 16) & 0xFF, (n >> 24) & 0xFF]; }
+  var encoder = new TextEncoder();
+  files.forEach(function (f) {
+    var nameBytes = encoder.encode(f.name);
+    var data = (typeof f.data === "string") ? encoder.encode(f.data) : f.data;
+    var crc = eadjCrc32(data);
+    var header = [0x50, 0x4B, 0x03, 0x04, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      .concat(u32(crc), u32(data.length), u32(data.length), u16(nameBytes.length), u16(0));
+    var local = new Uint8Array(header.length + nameBytes.length + data.length);
+    local.set(header, 0); local.set(nameBytes, header.length); local.set(data, header.length + nameBytes.length);
+    chunks.push(local);
+    var ch = [0x50, 0x4B, 0x01, 0x02, 20, 0, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      .concat(u32(crc), u32(data.length), u32(data.length), u16(nameBytes.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset));
+    var cent = new Uint8Array(ch.length + nameBytes.length);
+    cent.set(ch, 0); cent.set(nameBytes, ch.length);
+    central.push(cent);
+    offset += local.length;
+  });
+  var centralSize = central.reduce(function (a, c) { return a + c.length; }, 0);
+  var end = [0x50, 0x4B, 0x05, 0x06, 0, 0, 0, 0]
+    .concat(u16(files.length), u16(files.length), u32(centralSize), u32(offset), u16(0));
+  var total = offset + centralSize + end.length;
+  var out = new Uint8Array(total);
+  var pos = 0;
+  chunks.forEach(function (c) { out.set(c, pos); pos += c.length; });
+  central.forEach(function (c) { out.set(c, pos); pos += c.length; });
+  out.set(end, pos);
+  return out;
+}
+
+/* ---- OOXML helpers ---- */
+function rpr(o) {
+  var s = "";
+  if (o.bold) s += "<w:b/>";
+  if (o.italic) s += "<w:i/>";
+  if (o.underline) s += "<w:u w:val=\"single\"/>";
+  if (o.size) s += "<w:sz w:val=\"" + o.size + "\"/><w:szCs w:val=\"" + o.size + "\"/>";
+  s += "<w:rFonts w:ascii=\"Times New Roman\" w:hAnsi=\"Times New Roman\"/>";
+  return s ? "<w:rPr>" + s + "</w:rPr>" : "";
+}
+function runXml(text, o) {
+  o = o || {};
+  var out = "<w:r>" + rpr(o);
+  var parts = String(text).split("\t");
+  parts.forEach(function (part, i) {
+    if (i > 0) out += "<w:tab/>";
+    var lines = part.split("\n");
+    lines.forEach(function (line, j) {
+      if (j > 0) out += "<w:br/>";
+      if (line !== "") out += "<w:t xml:space=\"preserve\">" + escXml(line) + "</w:t>";
+    });
+  });
+  return out + "</w:r>";
+}
+function paraXml(text, o) {
+  o = o || {};
+  var ppr = "";
+  if (o.align) ppr += "<w:jc w:val=\"" + o.align + "\"/>";
+  if (o.spaceBefore !== undefined || o.spaceAfter !== undefined) {
+    ppr += "<w:spacing w:before=\"" + (o.spaceBefore || 0) + "\" w:after=\"" + (o.spaceAfter || 0) + "\" w:line=\"240\" w:lineRule=\"auto\"/>";
+  }
+  if (o.indent) ppr += "<w:ind w:left=\"" + o.indent + "\"/>";
+  return "<w:p>" + (ppr ? "<w:pPr>" + ppr + "</w:pPr>" : "") + runXml(text, o) + "</w:p>";
+}
+function emptyPara() { return "<w:p><w:pPr><w:spacing w:after=\"0\" w:line=\"240\" w:lineRule=\"auto\"/></w:pPr></w:p>"; }
+function sectionHeadXml(title) {
+  return "<w:tbl><w:tblPr><w:tblStyle w:val=\"TableGrid\"/><w:tblW w:w=\"9360\" w:type=\"dxa\"/><w:tblBorders><w:top w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:left w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:bottom w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:right w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:insideH w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:insideV w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/></w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w=\"9360\"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:tcW w:w=\"9360\" w:type=\"dxa\"/><w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"E6E6E6\"/></w:tcPr>" + paraXml(title, { bold: true }) + "</w:tc></w:tr></w:tbl>";
+}
+function gridTableXml(headers, rows, widths) {
+  var cols = headers.length;
+  var w = widths || headers.map(function () { return Math.round(9360 / cols); });
+  var total = w.reduce(function (a, b) { return a + b; }, 0);
+  var grid = "<w:tblGrid>" + w.map(function (x) { return "<w:gridCol w:w=\"" + x + "\"/>"; }).join("") + "</w:tblGrid>";
+  var borders = "<w:tblBorders><w:top w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:left w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:bottom w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:right w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:insideH w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:insideV w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/></w:tblBorders>";
+  var out = "<w:tbl><w:tblPr><w:tblStyle w:val=\"TableGrid\"/><w:tblW w:w=\"" + total + "\" w:type=\"dxa\"/>" + borders + "</w:tblPr>" + grid;
+  function cell(text, header) {
+    return "<w:tc><w:tcPr>" + (header ? "<w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"D9D9D9\"/>" : "") + "</w:tcPr>" + paraXml(text, { bold: !!header }) + "</w:tc>";
+  }
+  out += "<w:tr><w:trPr><w:tblHeader w:val=\"true\"/></w:trPr>" + headers.map(function (h) { return cell(h, true); }).join("") + "</w:tr>";
+  rows.forEach(function (row) {
+    out += "<w:tr><w:trPr><w:cantSplit/></w:trPr>" + row.map(function (v) { return cell(v === null || v === undefined ? "" : String(v), false); }).join("") + "</w:tr>";
+  });
+  return out + "</w:tbl>";
+}
+/* Template column widths (dxa) from the 2024 memo, Tables 1-6. */
+var TABLE_WIDTHS = {
+  t1: [677, 1999, 1170, 1170, 1440, 1350, 1170, 1440],
+  t2: [676, 3080, 1440, 1800, 1620, 1800],
+  t3: [1245, 4401, 2430, 2340],
+  t4: [1245, 3951, 1530, 1890, 1800],
+  t5: [1245, 3951, 1530, 1890, 1800],
+  t6: [1245, 3951, 1530, 1890, 1800]
+};
+function singleColTableXml(paras, shaded, width) {
+  var w = width || 9360;
+  var out = "<w:tbl><w:tblPr><w:tblStyle w:val=\"TableGrid\"/><w:tblW w:w=\"" + w + "\" w:type=\"dxa\"/><w:tblBorders><w:top w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:left w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:bottom w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:right w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:insideH w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/><w:insideV w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"000000\"/></w:tblBorders></w:tblPr><w:tblGrid><w:gridCol w:w=\"" + w + "\"/></w:tblGrid>";
+  paras.forEach(function (p) {
+    out += "<w:tr><w:tc><w:tcPr><w:tcW w:w=\"" + w + "\" w:type=\"dxa\"/>" + (shaded ? "<w:shd w:val=\"clear\" w:color=\"auto\" w:fill=\"E6E6E6\"/>" : "") + "</w:tcPr>" + p + "</w:tc></w:tr>";
+  });
+  return out + "</w:tbl>";
+}
+function checkBox(checked) { return checked ? "☒" : "☐"; }
+function cellValue(row, field) {
+  var v = row[field];
+  if (v === null || v === undefined || v === "") return "";
+  if (field === "supplementEnds" || field === "reduceDate") return fmtDate(v);
+  if (typeof v === "number") return fmtMoney(v);
+  return String(v);
+}
+
+/* ---- document body ---- */
+function buildDocumentXml(data, conclusion) {
+  var cd = data.caseData;
+  var s = data.sections;
+  var b = [];
+  function P(text, o) { b.push(paraXml(text, o || {})); }
+  function E() { b.push(emptyPara()); }
+  function head(key) { b.push(sectionHeadXml(SECTION_TITLES[key])); E(); }
+  function refs(key) {
+    if (SECTION_REFS[key] && SECTION_REFS[key].length) {
+      P("Reference" + (SECTION_REFS[key].length > 1 ? "s" : "") + ":", { bold: true });
+      SECTION_REFS[key].forEach(function (r) { P(r); });
+      E();
+    }
+  }
+  function factsText(sec) {
+    var t = sec.facts || "";
+    var c = citeText(sec.citation);
+    if (c) t += " [" + c + "]";
+    return t;
+  }
+
+  /* memo header */
+  P("MEMORANDUM", { bold: true, size: 28, align: "center" });
+  E();
+  P("TO:\t\t" + (cd.toEbls || "") + ", CSD Branch 2A");
+  P("\t\t" + (cd.toAuditor || "") + ", Auditor, AED/[branch]");
+  P("\t\t" + (cd.toSerco || "") + ", Serco Operations");
+  E();
+  P("FROM:\t\t" + (cd.fromActuary || "") + ", Actuary, ASD/" + (cd.fromSection || "[section]"));
+  P("\t\t" + (cd.fromContractActuary || "") + ", Contract Actuary, " + (cd.fromFirm || "[Actuarial Firm]") + " (if applicable)");
+  E();
+  P("CC:\t\t" + (cd.ccSupervisor || "") + ", Benefits Specialist Supervisor, CSD Branch 2A");
+  E();
+  P("DATE:\t\t" + fmtDate(cd.memoDate));
+  E();
+  P("SUBJECT:\tEstimated Benefits Adjustment Analysis");
+  E();
+  P("PBGC Case Number:\t\t\t\t" + cd.caseNumber);
+  P("Plan Name:\t\t\t\t\t" + cd.planName);
+  P("Bankruptcy Petition Date (BPD):\t\t" + fmtDate(cd.bpd));
+  P("Date of Plan Termination (DOPT):\t\t" + fmtDate(cd.dopt));
+  P("Date of Trusteeship (DOTR):\t\t\t" + fmtDate(cd.dotr));
+  E();
+  P("Purpose: To identify operating policies and issues impacting estimated benefits and to identify participants whose benefits are to be adjusted.");
+  E();
+
+  /* §1 */
+  head("s1");
+  refs("s1");
+  P("Guidance: If a plan terminates while the plan sponsor is in bankruptcy, and the sponsor filed for bankruptcy on or after 09/16/2006, PPA 2006 requires that the Bankruptcy Petition Date (BPD) be treated as the Date of Plan Termination (DOPT) for purposes of determining (1) the benefits PBGC guarantees, and (2) the amount of benefits in priority category 3 (PC3).");
+  E();
+  P("Did the plan sponsor file for bankruptcy on or after 09/16/2006?");
+  P(s.s1.q1 === "no" ? " No: No further action required." : " Yes: Continue to question #2.");
+  E();
+  P("Did the plan terminate while the company was in bankruptcy?");
+  P(s.s1.q2 === "no" ? " No: No further action required." : " Yes: Use the Bankruptcy Petition Date (BPD) for purposes of guarantees and allocating assets in PC3. State the facts and circumstances, including the date of the event(s), and contact Ask OPD for guidance if needed.");
+  E();
+  P(factsText(s.s1));
+  E();
+
+  /* §2 */
+  head("s2");
+  refs("s2");
+  P("Guidance: Benefit increases resulting from a shutdown or other unpredictable contingent event are phased in as if a plan amendment had been adopted on the date the event occurred. Please refer to the referenced policy for guidance on determining the phase-in period. Note: Payment of UCEBs may be restricted by IRC §436 benefit limitations addressed in Section 3, Benefit Restrictions for Underfunded Pension Plans (IRC §436 Limitations).");
+  E();
+  P("Does the plan provide shutdown, supplemental, unreduced, or other early retirement benefits due to an unpredictable contingent event (for example, permanent shutdown, permanent lay-off, etc.) that occurred on or after 07/27/2005?");
+  P(s.s2.answer === "no" ? " No: No further action needed." : " Yes: Include the date of the event(s) in the facts and circumstances below. Contact Ask OPD for additional guidance if needed.");
+  E();
+  if (s.s2.answer === "yes" && s.s2.eventDates) P("Date of event(s): " + s.s2.eventDates);
+  P(factsText(s.s2));
+  E();
+
+  /* §3 */
+  head("s3");
+  refs("s3");
+  P("Guidance: Section 436 of the Internal Revenue Code (IRC) places restrictions on certain benefit accruals and payments based on the adjusted funding target attainment percentage (AFTAP) for a plan's year beginning with PY2008 for most plans. These limitations may affect the calculation, valuation, and/or payment of benefits by PBGC.");
+  E();
+  P("Instructions: Follow TP 14 §436 Benefit Limitations to establish if the calculation, valuation and/or payment of benefits by PBGC is affected by IRC §436 and document the results below by selecting the most applicable response and deleting the others.");
+  E();
+  var s3txt = S3_TEXT[s.s3.outcome].replace("{ips}", s.s3.ipsNumber || "");
+  P(s.s3.outcome + ". " + s3txt);
+  if (s.s3.outcome === "3.4" && Array.isArray(s.s3.limitations)) {
+    s.s3.limitations.forEach(function (l) { P(" " + S3_LIMIT_LABELS[l]); });
+    E();
+    P("The effect of the limitation(s) is described in the §436 Evaluation.");
+  }
+  E();
+
+  /* §4 */
+  head("s4");
+  refs("s4");
+  P("Does the plan provide for any non-level benefits or other benefit forms that may require future benefit adjustments at a certain date? Examples include:");
+  P("Benefit forms with step-downs, such as those providing a Social Security offset starting at age 62.");
+  P("Benefit forms with step-up increases on a certain date.");
+  P("Disability benefits that convert at early or normal retirement dates.");
+  P("Remainders of period-certain benefits being paid to beneficiaries, such as five-year certain & continuous (5C&C) benefits, that will end on a certain date.");
+  P("Temporary or other supplements (for guidance, see PBGC Operating Policy 6.2-1 Earnings-Offset Provisions and TP 51 Earnings Offsets).");
+  P("Temporary recoupments instituted by the prior plan sponsor before DOPT for overpayments.");
+  E();
+  P(s.s4.q1 === "no" ? " No: No further action needed." : " Yes: State which forms are provided by the plan below. Instruct EBLS/field office to determine if any participants are currently receiving benefits in this form and continue to Question 2.");
+  E();
+  if (s.s4.q1 === "yes" && Array.isArray(s.s4.forms)) {
+    s.s4.forms.forEach(function (f) { P("• " + f.description); });
+    E();
+    P("Are any participants receiving benefits in the forms referenced in Question 1? (Consult with the EBLS or field office as required to make this determination.)");
+    P(s.s4.q2 === "no" ? " No: No further action needed." : " Yes: Indicate below where documentation is located in IPS. Confirm that the EBLS/field office has entered end-dates in Spectrum as required for non-level benefits.");
+    E();
+    if (s.s4.q2 === "yes") {
+      if (s.s4.ipsLocation) P("Documentation located in IPS: " + s.s4.ipsLocation);
+      P("End-dates entered in Spectrum: " + (s.s4.spectrumConfirmed === "yes" ? "Yes" : "Not confirmed"));
+      E();
+    }
+  }
+  P(factsText(s.s4));
+  E();
+
+  /* §5 */
+  head("s5");
+  P("Does this plan contain offsets to be applied to benefits? Examples include, but are not limited to:");
+  ["Black Lung Benefits", "Disability benefits from another plan", "Earnings offsets applicable to supplemental benefits (for guidance, see PBGC Operating Policy 6.2-1 Earnings-Offset Provisions and TP 51 Earnings Offsets).", "Partial cash-outs", "Pension benefits from another plan, whether from the same or a related plan sponsor or by a union such as the United Mine Workers of America (UMWA)", "Purchased annuities", "SSA benefits", "Workers' Compensation", "Plan loans", "Fiduciary Breaches, as determined by OGC"].forEach(function (x) { P(x); });
+  E();
+  P(s.s5.answer === "no" ? " No: No further action needed." : " Yes: Describe the offset(s) below and provide guidance for benefit administration.");
+  E();
+  if (s.s5.answer === "yes") {
+    if (Array.isArray(s.s5.offsetTypes)) s.s5.offsetTypes.forEach(function (t) { P("• " + t); });
+    if (s.s5.description) P(s.s5.description);
+    E();
+  }
+  P(factsText(s.s5));
+  E();
+
+  /* §6 */
+  head("s6");
+  refs("s6");
+  P("Guidance: A plan trusteed by PBGC (\"the plan\") may be a successor to an earlier plan (a predecessor plan). A successor plan is considered a continuation of the predecessor plan. PBGC treats the successor plan and the predecessor plan as a single plan in calculating and valuing benefits under the successor plan.");
+  E();
+  P("Instructions: Follow procedures in TP 61 Successor Plan Determinations to determine if a successor plan determination is needed and if so, to make the determination. Select from the following to document results and delete those that do not apply.");
+  E();
+  if (s.s6.outcome === "6.1") {
+    P("6.1. Earlier Plan Not Identified. A successor plan determination is not needed because evidence of an earlier plan was not found in plan records, PBGC records, and/or other available information.");
+  } else if (s.s6.outcome === "6.2") {
+    P("6.2. Successor Plan Determination Not Needed – Benefits Would Not Be Affected. Based on the answers to the following questions, a Successor Plan Determination is not needed because benefits in the current plan would not be affected by the determination.");
+  } else {
+    P("6.3. Results of Successor Plan Determination (Complete a successor plan determination if 6.1 or 6.2 do not apply and document the results below):");
+    P(s.s6.isSuccessor === "yes" ? " The plan is a successor to the prior plan." : " The plan is not a successor to the prior plan.");
+    E();
+    P("See Successor Plan Determination, IPS " + (s.s6.ipsNumber || "") + ", to identify the effect of the determination on the calculation and valuation of benefits under the plan.");
+  }
+  E();
+  if (s.s6.outcome === "6.2" || s.s6.outcome === "6.3") {
+    var sc = s.s6.screening || {};
+    var qParas = S6_SCREEN_ORDER.map(function (k) {
+      var v = sc[k];
+      var ans = v === "yes" ? "Yes" : v === "no" ? "No" : "N/A – A benefit was not provided under the plan for a " + (k === "phaseInSubstantial" ? "substantial owner." : "majority owner.");
+      return paraXml(S6_SCREEN_LABELS[k] + "  " + ans);
+    });
+    qParas.unshift(paraXml("Would the successor plan determination affect: (Answer the following questions.)", { bold: true }));
+    b.push(singleColTableXml(qParas, false, 8522));
+    b.push(singleColTableXml([paraXml("A successor plan determination is not needed if all of the answers are \"No.\" A successor plan determination is needed if one or more of the answers is \"Yes.\"")], false, 8522));
+    E();
+  }
+  P(factsText(s.s6));
+  E();
+
+  /* §7 */
+  head("s7");
+  refs("s7");
+  P("Are there participants in pay status subject to benefit adjustments?  " + fmtYesNo(s.s7.q1) + "  (See Sections 8. and 9.)");
+  E();
+  if (s.s7.q1 === "yes") {
+    P("If yes to Question 1, are any of those participants retired or eligible to retire on DOPT-3 (use BPD-3 for PPA 2006 bankruptcy plans)?  " + fmtYesNo(s.s7.q2));
+    E();
+    if (s.s7.q2 === "yes") P("If yes to Question 2, perform PC3 analysis for consideration when determining benefit adjustments.");
+    E();
+  }
+  P(factsText(s.s7));
+  if (typeof s.s7.estimatedAssets === "number") P("Estimated assets (auditor figure): " + fmtMoney(s.s7.estimatedAssets) + ".");
+  E();
+
+  /* §8 */
+  head("s8");
+  refs("s8");
+  P("Estimated guaranteed benefits for retired participants of this plan have been calculated based on " + s.s8.dataBasis + " data obtained from " + s.s8.dataSource + ".");
+  E();
+  P("Accrued-at-Normal Limit:", { bold: true });
+  E();
+  P(s.s8.counts.supplements + " of the Plan's retirees were receiving supplements as of DOPT. See Table 1 below.");
+  P(s.s8.counts.ucebPhaseIn + " of the Plan's retirees were receiving supplements subject to phase-in of Unpredictable Contingent Event Benefits (UCEBs) under PPA 2006 as of DOPT or, if the Plan is in bankruptcy, as of the Bankruptcy Petition Date (BPD).");
+  P(s.s8.counts.disabled + " of these participants are persons with disabilities recognized by the Plan.");
+  P(s.s8.counts.shouldReduce + " of the Plan's retirees have recently attained an age at which a change in benefit (for example, SSA benefit offsets, non-level annuity forms, or offsets from other plans) should have been implemented but was not. See Table 2: Participants Receiving Benefits That Should Have Been Reduced.");
+  E();
+  P(s.s8.narrative + " See Table 1: Participant(s) Receiving Supplements as of DOPT.");
+  E();
+  P("Maximum Guaranteed Benefit:", { bold: true });
+  E();
+  P("The monthly benefit amount of " + s.s8.counts.mgbExceeds + " pre-DOPT retiree(s) is greater than their Maximum Guaranteeable Benefit. See Table 3: Participant(s) Whose Benefits Exceed the Maximum Guaranteed Benefit.");
+  E();
+  P("Phase-In Limitations:", { bold: true });
+  E();
+  P(s.s8.counts.phaseInAffected + " participants are affected by the phase-in-limitation. See Table 4: Participant(s) Affected by Phase-In Limitations.");
+  E();
+  P("Aggregate Limit on Benefits Payable from PBGC Funds:", { bold: true });
+  E();
+  P(s.s8.aggregateLimit + " See Table 5: Participant(s) Affected by the Aggregate Limit.");
+  E();
+  ["t1", "t2", "t3", "t4", "t5"].forEach(function (tk) {
+    P(TABLE_CAPTIONS[tk], { bold: true });
+    var rows = (s.s8.tables[tk] || []).map(function (row) {
+      return TABLE_FIELDS[tk].map(function (f) { return cellValue(row, f); });
+    });
+    b.push(gridTableXml(TABLE_HEADERS[tk], rows, TABLE_WIDTHS[tk]));
+    E();
+  });
+
+  /* §9 */
+  head("s9");
+  P("Guidance: This estimated determination is to document whether a plan's DOPT asset value could impact participants' benefits.");
+  E();
+  P("If at any time, prior to the finalization of the DOPT asset evaluation but after this memorandum has been finalized, ASD identifies that the estimated determination below should be adjusted, please notify the asset evaluation auditor. An example is determining that additional Pre-Termination Plan Liabilities have been identified.");
+  E();
+  P("Instructions: Check all that apply.");
+  E();
+  P(checkBox(s.s9.c91) + "  9.1. Mandatory or Voluntary Employee Contributions have been identified.");
+  E();
+  P(checkBox(s.s9.c92) + "  9.2. Based on the completion of Section 7, Estimated Asset Allocation and Funding for PC3, an estimated Priority Category 3 analysis was completed.");
+  E();
+  P(checkBox(s.s9.c93) + "  9.3. Participants' benefits are estimated to be impacted by PBGC limitations. (Check if either A or B below applies.)");
+  E();
+  P((s.s9.c93 && s.s9.c93ab === "A" ? "☒" : "☐") + "  A. Based on completion of Section 8, Review Benefits Currently in Pay and Identify Payees for Benefit Adjustments, one or more in-pay participants' benefits are impacted by one of PBGC's limitations.");
+  E();
+  P((s.s9.c93 && s.s9.c93ab === "B" ? "☒" : "☐") + "  B. Based on completion of Section 8, Review Benefits Currently in Pay and Identify Payees for Benefit Adjustments, no in-pay participants' benefits are impacted by one of PBGC's limitations. However, it is estimated that one or more deferred participants could have their benefit impacted by one of PBGC's limitations.");
+  E();
+  P(factsText(s.s9));
+  E();
+  if (s.s9.c93 && s.s9.c93ab === "B") {
+    P("[It is possible that a deferred participant could be impacted by PBGC limitations even though no in-pay participants are impacted. One example would be a deferred participant whose benefit may be limited by the Maximum Insurance Limitation at any retirement age between EBSD and NRD. Another example would be an active participant as of the Bankruptcy Petition Date whose benefit eligibility and/or accruals may be limited due to BPD.]");
+    E();
+  }
+  P(checkBox(s.s9.c94) + "  9.4. A Majority Owner has been identified and the plan was in effect for less than 10 years.");
+  E();
+  P(TABLE_CAPTIONS.t6, { bold: true });
+  var t6rows = (s.s8.tables.t6 || []).map(function (row) {
+    return TABLE_FIELDS.t6.map(function (f) { return cellValue(row, f); });
+  });
+  b.push(gridTableXml(TABLE_HEADERS.t6, t6rows, TABLE_WIDTHS.t6));
+  E();
+  P(checkBox(s.s9.c95) + "  9.5. Participants' benefits are estimated to be limited by other limitations not defined in Sections 9.2 and 9.3, and the associated liabilities from those limitations are anticipated to be valued in Priority Category 6. Examples are death benefits in excess of the QPSA, lump-sum death benefits, and grow-ins.");
+  E();
+  P("Conclusion:", { bold: true });
+  E();
+  P("Instructions: Based on the responses in 9.1 – 9.5, check the applicable box below.");
+  E();
+  P((conclusion === "impacted" ? "☒" : "☐") + "  Participants' benefits are estimated to be impacted by assets because either:");
+  P(" One or more of the boxes in Sections 9.1-9.4 are checked, or");
+  P(" Section 9.5 is applicable, and the Funded GL Ratio reported on the most recent Pension Information Profile completed by NRAD is 80% or higher.");
+  E();
+  P((conclusion === "notImpacted" ? "☒" : "☐") + "  Participants' benefits are estimated to not be impacted by assets because either:");
+  P(" None of the boxes in Sections 9.1-9.4 are checked, or");
+  P(" Section 9.5 is applicable, but the Funded GL Ratio reported on the most recent Pension Information Profile completed by NRAD is less than 80%.");
+  E();
+  if (typeof s.s9.fundedGlRatio === "number") P("Funded GL Ratio (NRAD Pension Information Profile): " + s.s9.fundedGlRatio + "%.");
+  E();
+
+  /* concurrence */
+  P("CONCURRENCE:", { bold: true });
+  E();
+  E();
+  P("________________________________________________________________________");
+  P("Name, Title\t\t\t\t\t\t\t\t\tDate");
+  E();
+
+  var sectPr = "<w:sectPr><w:footerReference w:type=\"default\" r:id=\"rId1\"/><w:pgSz w:w=\"12240\" w:h=\"15840\"/><w:pgMar w:top=\"1440\" w:right=\"1440\" w:bottom=\"1440\" w:left=\"1440\" w:header=\"720\" w:footer=\"720\" w:gutter=\"0\"/></w:sectPr>";
+  return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><w:body>" + b.join("") + sectPr + "</w:body></w:document>";
+}
+
+function buildDocx(data, conclusion) {
+  var docXml = buildDocumentXml(data, conclusion);
+  var stylesXml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<w:styles xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii=\"Times New Roman\" w:hAnsi=\"Times New Roman\" w:eastAsia=\"Times New Roman\" w:cs=\"Times New Roman\"/><w:sz w:val=\"22\"/><w:szCs w:val=\"22\"/><w:lang w:val=\"en-US\"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after=\"120\" w:line=\"240\" w:lineRule=\"auto\"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type=\"paragraph\" w:default=\"1\" w:styleId=\"Normal\"><w:name w:val=\"Normal\"/><w:qFormat/><w:pPr><w:spacing w:after=\"120\" w:line=\"240\" w:lineRule=\"auto\"/></w:pPr><w:rPr><w:rFonts w:ascii=\"Times New Roman\" w:hAnsi=\"Times New Roman\"/><w:sz w:val=\"22\"/><w:szCs w:val=\"22\"/></w:rPr></w:style></w:styles>";
+  var footerXml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<w:ftr xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:p><w:pPr><w:jc w:val=\"center\"/></w:pPr><w:r>" + rpr({}) + "<w:t xml:space=\"preserve\">Estimated Benefits Adjustment Analysis Memo</w:t></w:r><w:r><w:tab/></w:r><w:r><w:fldChar w:fldCharType=\"begin\"/></w:r><w:r><w:instrText xml:space=\"preserve\"> PAGE </w:instrText></w:r><w:r><w:fldChar w:fldCharType=\"separate\"/></w:r><w:r><w:t>1</w:t></w:r><w:r><w:fldChar w:fldCharType=\"end\"/></w:r></w:p><w:p><w:pPr><w:jc w:val=\"center\"/></w:pPr><w:r>" + rpr({}) + "<w:t xml:space=\"preserve\">Version of " + EADJ.templateVersion + "</w:t></w:r></w:p></w:ftr>";
+  var contentTypes = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/><Override PartName=\"/word/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml\"/><Override PartName=\"/word/footer1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml\"/><Override PartName=\"/word/fontTable.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml\"/><Override PartName=\"/word/theme/theme1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.theme+xml\"/><Override PartName=\"/docProps/core.xml\" ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\"/><Override PartName=\"/docProps/app.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.extended-properties+xml\"/></Types>";
+  var rels = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/></Relationships>";
+  var docRels = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer\" Target=\"footer1.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable\" Target=\"fontTable.xml\"/><Relationship Id=\"rId4\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme\" Target=\"theme/theme1.xml\"/></Relationships>";
+  var fontTable = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<w:fonts xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:font w:name=\"Times New Roman\"><w:family w:val=\"roman\"/><w:pitch w:val=\"variable\"/></w:font></w:fonts>";
+  var theme = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<a:theme xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" name=\"Office Theme\"><a:themeElements><a:clrScheme name=\"Office\"><a:dk1><a:sysClr val=\"windowText\" lastClr=\"000000\"/></a:dk1><a:lt1><a:sysClr val=\"window\" lastClr=\"FFFFFF\"/></a:lt1><a:dk2><a:srgbClr val=\"1F497D\"/></a:dk2><a:lt2><a:srgbClr val=\"EEECE1\"/></a:lt2><a:accent1><a:srgbClr val=\"4F81BD\"/></a:accent1><a:accent2><a:srgbClr val=\"C0504D\"/></a:accent2><a:accent3><a:srgbClr val=\"9BBB59\"/></a:accent3><a:accent4><a:srgbClr val=\"8064A2\"/></a:accent4><a:accent5><a:srgbClr val=\"4BACC6\"/></a:accent5><a:accent6><a:srgbClr val=\"F79646\"/></a:accent6><a:hlink><a:srgbClr val=\"0000FF\"/></a:hlink><a:folHlink><a:srgbClr val=\"800080\"/></a:folHlink></a:clrScheme><a:fontScheme name=\"Office\"><a:majorFont><a:latin typeface=\"Times New Roman\"/></a:majorFont><a:minorFont><a:latin typeface=\"Times New Roman\"/></a:minorFont></a:fontScheme><a:fmtScheme name=\"Office\"><a:fillStyleLst><a:solidFill><a:schemeClr val=\"phClr\"/></a:solidFill></a:fillStyleLst></a:fmtScheme></a:themeElements></a:theme>";
+  var core = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\"><dc:title>Estimated Benefits Adjustment Analysis</dc:title><dc:creator>PBGC</dc:creator></cp:coreProperties>";
+  var app = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\"><Application>E.Adj Generator v" + EADJ.version + "</Application></Properties>";
+  return eadjZip([
+    { name: "[Content_Types].xml", data: contentTypes },
+    { name: "_rels/.rels", data: rels },
+    { name: "word/document.xml", data: docXml },
+    { name: "word/_rels/document.xml.rels", data: docRels },
+    { name: "word/styles.xml", data: stylesXml },
+    { name: "word/footer1.xml", data: footerXml },
+    { name: "word/fontTable.xml", data: fontTable },
+    { name: "word/theme/theme1.xml", data: theme },
+    { name: "docProps/core.xml", data: core },
+    { name: "docProps/app.xml", data: app }
+  ]);
+}
+EADJ.buildDocx = buildDocx;
+EADJ.buildDocumentXml = buildDocumentXml;
+EADJ.DEMO = EADJ_DEMO;
+EADJ.SCRAPER_PROMPT = EADJ_SCRAPER_PROMPT;
+
+/* ---- UI ---- */
+function $(id) { return document.getElementById(id); }
+function showPage(name) {
+  ["generator", "welcome", "help"].forEach(function (n) {
+    $("page-" + n).classList.toggle("active", n === name);
+  });
+  document.querySelectorAll("nav.app-nav button").forEach(function (b) {
+    if (b.getAttribute("data-nav") === name) b.setAttribute("aria-current", "page");
+    else b.removeAttribute("aria-current");
+  });
+}
+function showStep(n) {
+  [1, 2, 3, 4, 5].forEach(function (i) {
+    $("step-" + i).hidden = (i !== n);
+  });
+  document.querySelectorAll(".stepper li").forEach(function (li) {
+    var s = parseInt(li.getAttribute("data-step"), 10);
+    if (s === n) li.setAttribute("aria-current", "step"); else li.removeAttribute("aria-current");
+    li.classList.toggle("done", s < n);
+  });
+  window.scrollTo(0, 0);
+}
+function readCaseHeader() {
+  return {
+    toEbls: $("f-toEbls").value.trim() || null,
+    toAuditor: $("f-toAuditor").value.trim() || null,
+    toSerco: $("f-toSerco").value.trim() || null,
+    fromActuary: $("f-fromActuary").value.trim() || null,
+    fromSection: $("f-fromSection").value.trim() || null,
+    fromContractActuary: $("f-fromContractActuary").value.trim() || null,
+    fromFirm: $("f-fromFirm").value.trim() || null,
+    ccSupervisor: $("f-ccSupervisor").value.trim() || null,
+    memoDate: $("f-memoDate").value || null,
+    caseNumber: $("f-caseNumber").value.trim() || null,
+    planName: $("f-planName").value.trim() || null,
+    bpd: $("f-bpd").value || null,
+    dopt: $("f-dopt").value || null,
+    dotr: $("f-dotr").value || null
+  };
+}
+function writeCaseHeader(cd) {
+  if (!cd) return;
+  $("f-toEbls").value = cd.toEbls || "";
+  $("f-toAuditor").value = cd.toAuditor || "";
+  $("f-toSerco").value = cd.toSerco || "";
+  $("f-fromActuary").value = cd.fromActuary || "";
+  $("f-fromSection").value = cd.fromSection || "";
+  $("f-fromContractActuary").value = cd.fromContractActuary || "";
+  $("f-fromFirm").value = cd.fromFirm || "";
+  $("f-ccSupervisor").value = cd.ccSupervisor || "";
+  $("f-memoDate").value = cd.memoDate || "";
+  $("f-caseNumber").value = cd.caseNumber || "";
+  $("f-planName").value = cd.planName || "";
+  $("f-bpd").value = cd.bpd || "";
+  $("f-dopt").value = cd.dopt || "";
+  $("f-dotr").value = cd.dotr || "";
+}
+function downloadBlob(bytes, filename, type) {
+  var blob = bytes instanceof Uint8Array ? new Blob([bytes], { type: type }) : new Blob([bytes], { type: type });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 500);
+}
+function caseFileName() {
+  var c = (state.caseData && state.caseData.caseNumber) ? String(state.caseData.caseNumber) : "case";
+  return c + "EAdj.docx";
+}
+function currentData() {
+  var cd = readCaseHeader();
+  return { caseData: cd, sections: state.sections, sources: state.sources };
+}
+function sectionSummary(key) {
+  var s = state.sections[key];
+  if (!s) return "No data.";
+  switch (key) {
+    case "s1": return "Bankruptcy on/after 09/16/2006: " + fmtYesNo(s.q1) + ". Terminated in bankruptcy: " + fmtYesNo(s.q2) + ". " + (s.facts || "");
+    case "s2": return "UCEBs: " + fmtYesNo(s.answer) + (s.eventDates ? " Event: " + s.eventDates + "." : "") + " " + (s.facts || "");
+    case "s3": return "Outcome " + s.outcome + (s.ipsNumber ? " (" + s.ipsNumber + ")" : "") + (s.outcome === "3.4" && s.limitations ? " Limits: " + s.limitations.join(", ") + "." : "");
+    case "s4": return "Non-level forms: " + fmtYesNo(s.q1) + (s.q1 === "yes" ? " Participants in those forms: " + fmtYesNo(s.q2) + "." : "") + " " + (s.facts || "");
+    case "s5": return "Offsets: " + fmtYesNo(s.answer) + (s.answer === "yes" && s.offsetTypes ? " " + s.offsetTypes.join("; ") + "." : "") + " " + (s.facts || "");
+    case "s6": return "Outcome " + s.outcome + (s.ipsNumber ? " (" + s.ipsNumber + ")" : "") + (s.outcome === "6.3" ? " Successor: " + fmtYesNo(s.isSuccessor) + "." : "");
+    case "s7": return "In pay subject to adjustments: " + fmtYesNo(s.q1) + (s.q1 === "yes" ? " Retired/eligible on DOPT-3: " + fmtYesNo(s.q2) + "." : "") + " " + (s.facts || "");
+    case "s8": {
+      var c = s.counts || {};
+      return "Supplements: " + (c.supplements || 0) + ". UCEB phase-in: " + (c.ucebPhaseIn || 0) + ". Disabled: " + (c.disabled || 0) + ". Should reduce: " + (c.shouldReduce || 0) + ". Over MGB: " + (c.mgbExceeds || 0) + ". Phase-in: " + (c.phaseInAffected || 0) + ".";
+    }
+    case "s9": {
+      var sug = suggestConclusion(s);
+      return "Checked: " + ["9.1", "9.2", "9.3", "9.4", "9.5"].filter(function (x, i) { return [s.c91, s.c92, s.c93, s.c94, s.c95][i]; }).join(", ") + " (none if blank). Funded GL Ratio: " + (typeof s.fundedGlRatio === "number" ? s.fundedGlRatio + "%" : "—") + ". Suggested conclusion: " + (sug === "impacted" ? "impacted" : sug === "notImpacted" ? "not impacted" : "cannot compute") + ".";
+    }
+  }
+  return "";
+}
+function renderReview() {
+  var list = $("review-list");
+  list.innerHTML = "";
+  var keys = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9"];
+  keys.forEach(function (key) {
+    var sec = document.createElement("div");
+    sec.className = "review-sec";
+    sec.id = "review-" + key;
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.setAttribute("aria-expanded", "false");
+    var title = document.createElement("span");
+    title.textContent = "§" + key.slice(1) + " — " + SECTION_TITLES[key].replace(/^\d+\.\s*/, "");
+    var badge = document.createElement("span");
+    badge.className = "badge" + (state.approved[key] ? " approved" : "");
+    badge.textContent = state.approved[key] ? "Approved" : "Not approved";
+    btn.appendChild(title); btn.appendChild(badge);
+    btn.addEventListener("click", function () {
+      var open = sec.classList.toggle("open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    var body = document.createElement("div");
+    body.className = "body";
+    var dl = document.createElement("dl");
+    function addDtDd(dt, dd) {
+      var dte = document.createElement("dt"); dte.textContent = dt;
+      var dde = document.createElement("dd"); dde.textContent = dd;
+      dl.appendChild(dte); dl.appendChild(dde);
+    }
+    addDtDd("Summary", sectionSummary(key));
+    var s = state.sections[key];
+    if (s) {
+      addDtDd("Facts", s.facts || "—");
+      var cit = citeText(s.citation);
+      if (cit) addDtDd("Citation", cit);
+      if (s.note) addDtDd("Note", s.note);
+      if (key === "s8" && s.tables) {
+        ["t1", "t2", "t3", "t4", "t5", "t6"].forEach(function (tk) {
+          var rows = s.tables[tk] || [];
+          var tbl = document.createElement("table");
+          tbl.className = "data";
+          var cap = document.createElement("caption");
+          cap.textContent = TABLE_CAPTIONS[tk] + " (" + rows.length + " row" + (rows.length === 1 ? "" : "s") + ")";
+          tbl.appendChild(cap);
+          var thead = document.createElement("thead");
+          var tr = document.createElement("tr");
+          TABLE_HEADERS[tk].forEach(function (h) { var th = document.createElement("th"); th.textContent = h; tr.appendChild(th); });
+          thead.appendChild(tr); tbl.appendChild(thead);
+          var tbody = document.createElement("tbody");
+          rows.forEach(function (row) {
+            var rtr = document.createElement("tr");
+            TABLE_FIELDS[tk].forEach(function (f) { var td = document.createElement("td"); td.textContent = cellValue(row, f); rtr.appendChild(td); });
+            tbody.appendChild(rtr);
+          });
+          tbl.appendChild(tbody);
+          body.appendChild(tbl);
+        });
+      }
+      if (key === "s9") {
+        var sug = suggestConclusion(s);
+        var p = document.createElement("p");
+        p.textContent = "Suggested conclusion: " + (sug === "impacted" ? "impacted by assets" : sug === "notImpacted" ? "not impacted by assets" : "cannot compute (Funded GL Ratio missing)") + ". Choose the final conclusion:";
+        body.appendChild(p);
+        var radios = document.createElement("div");
+        radios.className = "field";
+        [["impacted", "Impacted by assets"], ["notImpacted", "Not impacted by assets"]].forEach(function (opt) {
+          var lab = document.createElement("label");
+          lab.style.display = "block";
+          var inp = document.createElement("input");
+          inp.type = "radio"; inp.name = "s9-conclusion"; inp.value = opt[0];
+          inp.checked = state.s9Conclusion === opt[0];
+          inp.addEventListener("change", function () {
+            state.s9Conclusion = opt[0];
+            auditLog("s9 conclusion chosen", opt[0]);
+          });
+          lab.appendChild(inp);
+          lab.appendChild(document.createTextNode(" " + opt[1]));
+          radios.appendChild(lab);
+        });
+        body.appendChild(radios);
+      }
+    }
+    body.appendChild(dl);
+    var approve = document.createElement("div");
+    approve.className = "approve-row";
+    var cb = document.createElement("input");
+    cb.type = "checkbox"; cb.id = "approve-" + key;
+    cb.checked = !!state.approved[key];
+    cb.addEventListener("change", function () {
+      state.approved[key] = cb.checked;
+      badge.textContent = cb.checked ? "Approved" : "Not approved";
+      badge.classList.toggle("approved", cb.checked);
+      auditLog(cb.checked ? "section approved" : "section approval removed", key);
+      updateDownloadButton();
+    });
+    var lab = document.createElement("label");
+    lab.setAttribute("for", "approve-" + key);
+    lab.textContent = "Approve §" + key.slice(1);
+    approve.appendChild(cb); approve.appendChild(lab);
+    body.appendChild(approve);
+    sec.appendChild(btn); sec.appendChild(body);
+    list.appendChild(sec);
+  });
+  updateDownloadButton();
+}
+function allApproved() {
+  return ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9"].every(function (k) { return state.approved[k]; });
+}
+function updateDownloadButton() {
+  $("btn-to-download").disabled = !allApproved();
+  if (allApproved() && !state.s9Conclusion) {
+    var sug = state.sections && state.sections.s9 ? suggestConclusion(state.sections.s9) : null;
+    if (sug) state.s9Conclusion = sug;
+  }
+}
+function loadData(data) {
+  var res = validateEadj(data);
+  var box = $("validation-result");
+  box.innerHTML = "";
+  if (!res.ok) {
+    var n = document.createElement("div");
+    n.className = "notice error";
+    n.setAttribute("role", "alert");
+    var h = document.createElement("p");
+    h.innerHTML = "<strong>" + res.errors.length + " error" + (res.errors.length === 1 ? "" : "s") + " — fix these before review:</strong>";
+    n.appendChild(h);
+    var ul = document.createElement("ul");
+    ul.className = "tight";
+    res.errors.forEach(function (e) { var li = document.createElement("li"); li.textContent = e; ul.appendChild(li); });
+    n.appendChild(ul);
+    box.appendChild(n);
+    $("btn-to-review").disabled = true;
+    auditLog("JSON validation failed", res.errors.length + " errors");
+    return false;
+  }
+  state.caseData = data.caseData;
+  state.sections = data.sections;
+  state.sources = Array.isArray(data.sources) ? data.sources : [];
+  state.approved = {};
+  state.s9Conclusion = data.sections.s9.conclusion || suggestConclusion(data.sections.s9);
+  writeCaseHeader(data.caseData);
+  var ok = document.createElement("div");
+  ok.className = "notice ok";
+  var p = document.createElement("p");
+  p.textContent = "Valid. " + (res.warnings.length ? res.warnings.length + " warning(s) — see below." : "No warnings.");
+  ok.appendChild(p);
+  if (res.warnings.length) {
+    var ul2 = document.createElement("ul");
+    ul2.className = "tight";
+    res.warnings.forEach(function (w) { var li = document.createElement("li"); li.textContent = w; ul2.appendChild(li); });
+    ok.appendChild(ul2);
+  }
+  box.appendChild(ok);
+  $("btn-to-review").disabled = false;
+  auditLog("JSON validated", "case " + data.caseData.caseNumber + ", " + res.warnings.length + " warnings");
+  return true;
+}
+function init() {
+  auditLog("app started", "E.Adj Generator v" + EADJ.version);
+  document.querySelectorAll("nav.app-nav button").forEach(function (b) {
+    b.addEventListener("click", function () { showPage(b.getAttribute("data-nav")); });
+  });
+  document.querySelectorAll("[data-next]").forEach(function (b) {
+    b.addEventListener("click", function () { showStep(parseInt(b.getAttribute("data-next"), 10)); });
+  });
+  document.querySelectorAll("[data-nav-goto]").forEach(function (b) {
+    b.addEventListener("click", function () { showPage(b.getAttribute("data-nav-goto")); showStep(1); });
+  });
+  $("btn-download-prompt").addEventListener("click", function () {
+    downloadBlob(EADJ_SCRAPER_PROMPT, "eadj-scraper-prompt.md", "text/markdown");
+    auditLog("scraper prompt downloaded");
+  });
+  $("btn-view-prompt").addEventListener("click", function () {
+    var pre = $("prompt-preview");
+    pre.hidden = !pre.hidden;
+    if (!pre.hidden) pre.textContent = EADJ_SCRAPER_PROMPT;
+  });
+  $("btn-validate").addEventListener("click", function () {
+    var raw = $("json-input").value.trim();
+    if (!raw) { $("validation-result").innerHTML = "<div class=\"notice error\" role=\"alert\"><p>Paste JSON first, or load the demo.</p></div>"; return; }
+    var parsed;
+    try { parsed = JSON.parse(raw); } catch (e) {
+      $("validation-result").innerHTML = "<div class=\"notice error\" role=\"alert\"><p>Not valid JSON: " + escHtml(e.message) + "</p></div>";
+      $("btn-to-review").disabled = true;
+      auditLog("JSON parse failed", e.message);
+      return;
+    }
+    loadData(parsed);
+  });
+  $("btn-upload-json").addEventListener("click", function () { $("file-json").click(); });
+  $("file-json").addEventListener("change", function () {
+    var f = $("file-json").files && $("file-json").files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      $("json-input").value = String(reader.result || "");
+      var parsed;
+      try { parsed = JSON.parse(String(reader.result || "")); } catch (e) {
+        $("validation-result").innerHTML = "<div class=\"notice error\" role=\"alert\"><p>Not valid JSON: " + escHtml(e.message) + "</p></div>";
+        return;
+      }
+      loadData(parsed);
+    };
+    reader.readAsText(f);
+  });
+  function loadDemo() {
+    var copy = JSON.parse(JSON.stringify(EADJ_DEMO));
+    $("json-input").value = JSON.stringify(copy, null, 2);
+    loadData(copy);
+    auditLog("demo loaded", "Maplewood Fabricators, case 87654321");
+  }
+  $("btn-load-demo").addEventListener("click", loadDemo);
+  $("btn-demo-welcome").addEventListener("click", function () { showPage("generator"); showStep(3); loadDemo(); });
+  $("btn-to-review").addEventListener("click", function () {
+    renderReview();
+    showStep(4);
+  });
+  $("btn-to-download").addEventListener("click", function () { showStep(5); });
+  $("btn-download-docx").addEventListener("click", function () {
+    var data = currentData();
+    var res = validateEadj(data);
+    if (!res.ok) { alert("Header or sections no longer valid. Check Step 1 and Step 3."); return; }
+    var bytes = buildDocx(data, state.s9Conclusion);
+    downloadBlob(bytes, caseFileName(), "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    $("download-note").textContent = "Downloaded " + caseFileName() + " (" + bytes.length + " bytes). Conclusion: " + (state.s9Conclusion === "impacted" ? "impacted by assets" : "not impacted by assets") + ".";
+    auditLog("docx downloaded", caseFileName() + ", conclusion " + state.s9Conclusion);
+  });
+  $("btn-download-inputs").addEventListener("click", function () {
+    var data = currentData();
+    downloadBlob(JSON.stringify(data, null, 2), String(data.caseData.caseNumber || "case") + "-eadj-inputs.json", "application/json");
+    auditLog("inputs JSON downloaded");
+  });
+  $("btn-download-audit").addEventListener("click", function () {
+    downloadBlob(state.audit.join("\n") + "\n", String((state.caseData && state.caseData.caseNumber) || "case") + "-eadj-audit.log", "text/plain");
+    auditLog("audit log downloaded");
+  });
+  /* restore saved theme preference only (no case data is persisted) */
+  try {
+    var saved = eadjStoreGet("eadj-theme");
+    if (saved) document.documentElement.setAttribute("data-theme", saved);
+  } catch (e) { /* storage unavailable: continue without it */ }
+  showPage("generator");
+  showStep(1);
+}
+if (typeof document !== "undefined") {
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+}
+</script>
+</body>
+</html>
